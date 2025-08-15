@@ -25,16 +25,22 @@ jobs:
 
       - name: Run tests
         run: ./gradlew test
+        working-directory: ./auction-service
+
+      - name: List test-results folder
+        run: ls -R auction-service/build/test-results
+
+      - name: List HTML reports folder
+        run: ls -R auction-service/build/reports/tests
 
       - name: Upload XML test results
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: build/test-results/test/
-      
+          path: auction-service/build/test-results/**/*.xml
+
       - name: Upload HTML test report
         uses: actions/upload-artifact@v4
         with:
           name: html-test-report
-          path: build/reports/tests/test/
-
+          path: auction-service/build/reports/tests/**/*.html
