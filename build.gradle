@@ -1,0 +1,15 @@
+subprojects {
+    apply plugin: 'java'
+
+    group = 'van.karm'
+    version = '1.0.0'
+    sourceCompatibility = '21'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    }
+}

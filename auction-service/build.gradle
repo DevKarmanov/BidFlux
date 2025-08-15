@@ -1,0 +1,26 @@
+plugins {
+    id("org.springframework.boot") version "3.5.4"
+    id("io.spring.dependency-management") version "1.1.6"
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.security:spring-security-crypto'
+    implementation("org.bouncycastle:bcprov-jdk18on:1.81")
+    implementation 'org.liquibase:liquibase-core'
+    implementation("org.postgresql:postgresql:42.7.7")
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+}
+
+test {
+    useJUnitPlatform()
+    jvmArgs += [
+            "-javaagent:${classpath.find { it.name.contains('mockito-core') }.absolutePath}"
+    ]
+}
