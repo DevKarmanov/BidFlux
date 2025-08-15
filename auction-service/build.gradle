@@ -20,6 +20,10 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    reports {
+        junitXml.required = true
+        html.required = true
+    }
     jvmArgs += [
             "-javaagent:${classpath.find { it.name.contains('mockito-core') }.absolutePath}"
     ]
