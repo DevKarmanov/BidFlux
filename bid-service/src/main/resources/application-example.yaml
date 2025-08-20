@@ -1,13 +1,18 @@
 server:
-  port: 8080
+  port: 8081
 
 grpc:
-  server:
-    port: 5434
-    security:
-      enabled: true
-      certificate-chain: classpath:certs/server-cert.pem
-      private-key: classpath:certs/server-key.pem
+  client:
+    auction-service:
+      address: localhost:5434
+      negotiation-type: TLS
+      security:
+        trust-cert-collection: classpath:client-truststore.jks
+        trust-store:
+          path: certs/client-truststore.jks
+          type: JKS
+          password: pass
+
 
 spring:
   datasource:

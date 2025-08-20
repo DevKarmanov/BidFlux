@@ -1,6 +1,7 @@
 package van.karm.auction.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import van.karm.auction.dto.request.CreateAuction;
 import van.karm.auction.dto.response.AuctionInfo;
@@ -12,8 +13,10 @@ import java.util.UUID;
 public interface AuctionController {
 
     @PostMapping
-    CreatedAuction createAuction(@Valid @RequestBody CreateAuction auctionInfo);
+    ResponseEntity<CreatedAuction> createAuction(@Valid @RequestBody CreateAuction auctionInfo);
 
     @PostMapping("/{id}")
-    AuctionInfo auctionInfo(@PathVariable UUID id, @RequestParam(required = false) String password);
+    ResponseEntity<AuctionInfo> auctionInfo(@PathVariable UUID id, @RequestParam(required = false) String password);
+
+    //todo добавить администраторам изменять пароль (не забыть добавить опцию которая спрашивает должны ли все ввести пароль заново и если да, то обнулить список доверенных людей)
 }

@@ -46,6 +46,9 @@ databaseChangeLog:
                   name: access_code_hash
                   type: varchar(255)
               - column:
+                  name: allowed_user_ids
+                  type: uuid[]
+              - column:
                   name: status
                   type: varchar(50)
                   constraints:

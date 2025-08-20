@@ -8,6 +8,7 @@ import org.hibernate.annotations.Check;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -69,6 +70,14 @@ public class Auction {
     @Enumerated(EnumType.STRING)
     @Column(name = "currency", nullable = false, length = 3)
     private CurrencyType currency;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "auction_allowed_users",
+            joinColumns = @JoinColumn(name = "auction_id")
+    )
+    @Column(name = "user_id")
+    private List<UUID> allowedUserIds; //todo добавить FK в liquibase к таблице User
 
     public Auction(String title, String description, BigDecimal startPrice, BigDecimal bidIncrement, BigDecimal reservePrice, boolean isPrivate, String accessCodeHash, AuctionStatus status, LocalDateTime startDate, LocalDateTime endDate, CurrencyType currency) {
         this.title = title;

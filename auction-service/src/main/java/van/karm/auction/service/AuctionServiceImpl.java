@@ -44,7 +44,7 @@ public class AuctionServiceImpl implements AuctionService{
                 auctionInfo.getReservePrice(),
                 auctionInfo.getIsPrivate(),
                 accessCodeHash,
-                AuctionStatus.ACTIVE,     //todo брать время окончания аукциона и заплинировать автоматчиескую установку его статутса на FINISHED
+                AuctionStatus.ACTIVE,     //todo брать время окончания аукциона и запланировать автоматическую установку его статуса на FINISHED
                 auctionInfo.getStartDate(),
                 auctionInfo.getEndDate(),
                 auctionInfo.getCurrency()
@@ -64,7 +64,7 @@ public class AuctionServiceImpl implements AuctionService{
                 throw new AccessDeniedException("Password is null");
             }
             boolean hasAccess = argon2.matches(password,auction.getAccessCodeHash());
-            if (hasAccess) {
+            if (hasAccess) { //todo обратиться к микросервису auth и получить userId из токена и добавить этого пользователя в список разрешенных
                 return AuctionMapper.toAuctionInfo(auction,true);
             }else {
                 throw new AccessDeniedException("Auction password does not match");

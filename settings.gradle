@@ -1,3 +1,6 @@
 rootProject.name = 'BidFlux'
 include 'auction-service'
 
+
+include 'bid-service'
+include 'contracts'

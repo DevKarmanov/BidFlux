@@ -125,12 +125,12 @@ public class AuctionControllerTest {
 
 
     @Test
-    void testCreateAuction_withValidInfo_shouldReturnOkAndDto() throws Exception {
+    void testCreateAuction_withValidInfo_shouldReturnIsCreatedAndDto() throws Exception {
         CreatedAuction createdAuction = new CreatedAuction(UUID.randomUUID(), "password");
         doReturn(createdAuction).when(auctionService).createAuction(any(CreateAuction.class));
 
         postCreateAuction(validPublicCreateAuctionDto())
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.password").exists());
     }
@@ -161,12 +161,12 @@ public class AuctionControllerTest {
     }
 
     @Test
-    void testGetAuctionInfo_withNonExistingId_shouldReturnBadRequest() throws Exception {
+    void testGetAuctionInfo_withNonExistingId_shouldReturnNotFound() throws Exception {
         UUID id = UUID.randomUUID();
         when(auctionRepo.findById(id)).thenReturn(Optional.empty());
 
-        postGetAuction(id, null).andExpect(status().isBadRequest());
-        postGetAuction(id, "password").andExpect(status().isBadRequest());
+        postGetAuction(id, null).andExpect(status().isNotFound());
+        postGetAuction(id, "password").andExpect(status().isNotFound());
     }
 }
 

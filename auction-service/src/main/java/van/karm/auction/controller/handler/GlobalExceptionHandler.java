@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
         log.warn("Соответствующая сущность не найдена: {}",ex.getMessage());
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .status(HttpStatus.NOT_FOUND)
                 .body("The corresponding entity was not found: " + ex.getMessage());
     }
 
