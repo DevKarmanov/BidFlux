@@ -12,6 +12,7 @@ import van.karm.bid.enums.Auction.AuctionStatus;
 import van.karm.bid.exception.BidAmountException;
 import van.karm.bid.model.Bid;
 import van.karm.bid.repo.BidRepo;
+import van.karm.bid.service.converter.MoneyConverter;
 import van.karm.bid.service.handler.auction.AuctionStatusHandler;
 import van.karm.bid.service.handler.grpc.GrpcExceptionHandler;
 
@@ -65,20 +66,22 @@ public class BidServiceImpl implements BidService {
     }
 
     private void validateBidAmount(AddBid bid, GetAuctionResponse response) {
-        var lastBid = bidRepo.findLastBidByAuctionId(bid.auctionId());
-
-        BigDecimal bidIncrement = BigDecimal.valueOf(response.getBidIncrement());
+        BigDecimal bidIncrement = MoneyConverter.fromMoney(response.getBidIncrement());
+        BigDecimal startPrice = MoneyConverter.fromMoney(response.getStartPrice());
+        BigDecimal lastBid = MoneyConverter.fromMoney(response.getLastBidAmount());
 
         boolean currentBidBiggerThenBidIncrement = bid.amount().compareTo(bidIncrement)>=0;
+        boolean currentBidBiggerThenPrevious = bid.amount().compareTo(lastBid)>0;
+        boolean currentBidBiggerOrEqualsStartPrice = bid.amount().compareTo(startPrice)>=0;
+
         if (!currentBidBiggerThenBidIncrement){
             throw new BidAmountException("The minimum bid step is "+bidIncrement);
         }
-
-        if (lastBid!=null){
-            boolean currentBidBiggerThenPrevious = lastBid.getAmount().compareTo(bid.amount())>=0;
-            if (!currentBidBiggerThenPrevious){
-                throw new BidAmountException("The bid must exceed the previous one");
-            }
+        if (!currentBidBiggerThenPrevious){
+            throw new BidAmountException("The bid must exceed the previous one");
+        }
+        if (!currentBidBiggerOrEqualsStartPrice){
+            throw new BidAmountException("The bid must match or exceed the specified starting bid");
         }
     }
 }

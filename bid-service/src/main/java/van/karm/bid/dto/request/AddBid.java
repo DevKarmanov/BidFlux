@@ -11,7 +11,6 @@ public record AddBid(
         UUID auctionId,
 
         @NotNull(message = "Bid amount is required")
-        @DecimalMin(value = "0.1", message = "The bid must be positive")
         BigDecimal amount
 ) {}
 

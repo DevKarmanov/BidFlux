@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/changeset-001-create-bid.yaml
+  - include:
+      file: db/changelog/changeset-002-bid-trigger.yaml

@@ -16,12 +16,15 @@ message GetAuctionRequest {
 
 message GetAuctionResponse {
   string id = 1;
-  double startPrice = 2;
-  double bidIncrement = 3;
-  double reservePrice = 4;
+  Money startPrice = 2;
+  Money bidIncrement = 3;
   bool isPrivate = 5;
   string status = 6;
-  google.protobuf.Timestamp startDate = 7;
-  google.protobuf.Timestamp endDate = 8;
   string currency = 9;
+  Money lastBidAmount = 10;
+}
+
+message Money {
+  int64 units = 1;
+  int32 scale = 2;
 }
