@@ -14,7 +14,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:8083/.well-known/jwks.json # замените на ваш path to pub key
+          jwk-set-uri: http://localhost:8086/.well-known/jwks.json # замените на ваш path to pub key
   datasource:
     url: jdbc:postgresql://localhost:5432/your_db_name                  # имя БД
     username: your_db_user                                              # пользователь БД
