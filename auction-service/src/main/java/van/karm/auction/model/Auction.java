@@ -8,7 +8,8 @@ import org.hibernate.annotations.Check;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -71,13 +72,15 @@ public class Auction {
     @Column(name = "currency", nullable = false, length = 3)
     private CurrencyType currency;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "auction_allowed_users",
-            joinColumns = @JoinColumn(name = "auction_id")
+            joinColumns = @JoinColumn(name = "auction_id"),
+            foreignKey = @ForeignKey(name = "fk_auction_allowed_users_auction")
     )
-    @Column(name = "user_id")
-    private List<UUID> allowedUserIds; //todo добавить FK в liquibase к таблице User
+    @Column(name = "user_id", nullable = false)
+    private Set<UUID> allowedUserIds = new HashSet<>();
+
 
     public Auction(String title, String description, BigDecimal startPrice, BigDecimal bidIncrement, BigDecimal reservePrice, boolean isPrivate, String accessCodeHash, AuctionStatus status, LocalDateTime startDate, LocalDateTime endDate, CurrencyType currency) {
         this.title = title;

@@ -14,21 +14,19 @@ dependencies {
     implementation "io.grpc:grpc-netty-shaded:${grpcNettyVersion}"
     implementation project(':contracts')
 
-    // Spring Boot
+    implementation('org.springframework.boot:spring-boot-starter-security')
+    implementation('org.springframework.boot:spring-boot-starter-oauth2-resource-server')
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-    // База
     implementation "org.postgresql:postgresql:${postgreVersion}"
     implementation 'org.liquibase:liquibase-core'
 
-    // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    // Тесты
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 

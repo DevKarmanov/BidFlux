@@ -1,6 +1,9 @@
 package van.karm.bid.controller.handler;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -9,8 +12,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import van.karm.bid.controller.exception.ApiError;
 import van.karm.bid.exception.*;
 
+import java.time.Instant;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
@@ -18,7 +23,10 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<String> methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiError> methodArgumentNotValidExceptionHandler(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request
+    ) {
         log.warn("Переданные значения не прошли валидацию: {}", ex.getMessage());
 
         String messages = ex.getBindingResult()
@@ -27,65 +35,96 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(messages);
+        return buildError(HttpStatus.BAD_REQUEST, "Validation error", messages, request.getRequestURI());
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<String> handleEntityNotFound(EntityNotFoundException ex) {
+    public ResponseEntity<ApiError> handleEntityNotFound(EntityNotFoundException ex, HttpServletRequest request) {
         log.warn("Сущность не найдена: {}", ex.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(ex.getMessage());
+        return buildError(HttpStatus.NOT_FOUND, "Entity not found", ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
+    public ResponseEntity<ApiError> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
         log.warn("Неизвестная ошибка: {}", ex.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ex.getMessage());
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(UnauthenticatedException.class)
+    public ResponseEntity<ApiError> handleUnauthenticatedException(UnauthenticatedException ex, HttpServletRequest request) {
+        log.warn("Ошибка авторизации: {}", ex.getMessage());
+        return buildError(HttpStatus.UNAUTHORIZED, "Invalid token", ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ApiError> handleInvalidTokenException(InvalidTokenException ex, HttpServletRequest request) {
+        log.warn("Недействительный токен: {}", ex.getMessage());
+        return buildError(HttpStatus.UNAUTHORIZED, "Invalid token", ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(InvalidArgumentException.class)
-    public ResponseEntity<String> handleInvalidArgument(InvalidArgumentException ex) {
+    public ResponseEntity<ApiError> handleInvalidArgument(InvalidArgumentException ex, HttpServletRequest request) {
         log.warn("Неверный аргумент: {}", ex.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, "Invalid argument", ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(ServiceUnavailableException.class)
-    public ResponseEntity<String> handleServiceUnavailable(ServiceUnavailableException ex) {
+    public ResponseEntity<ApiError> handleServiceUnavailable(ServiceUnavailableException ex, HttpServletRequest request) {
         log.error("Сервис недоступен: {}", ex.getMessage(), ex);
-        return ResponseEntity
-                .status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(ex.getMessage());
+        return buildError(HttpStatus.SERVICE_UNAVAILABLE, "Service unavailable", ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(AuctionInactiveException.class)
-    public ResponseEntity<String> handleAuctionInactive(AuctionInactiveException ex) {
+    public ResponseEntity<ApiError> handleAuctionInactive(AuctionInactiveException ex, HttpServletRequest request) {
         log.warn("Попытка сделать ставку в неактивном аукционе: {}", ex.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, "Auction inactive", ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(AuctionFinishedException.class)
-    public ResponseEntity<String> handleAuctionFinished(AuctionFinishedException ex) {
+    public ResponseEntity<ApiError> handleAuctionFinished(AuctionFinishedException ex, HttpServletRequest request) {
         log.warn("Попытка сделать ставку в завершённом аукционе: {}", ex.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, "Auction finished", ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(BidAmountException.class)
-    public ResponseEntity<String> handleBidAmount(BidAmountException ex) {
+    public ResponseEntity<ApiError> handleBidAmount(BidAmountException ex, HttpServletRequest request) {
         log.warn("Ошибка размера ставки: {}", ex.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, "Invalid bid amount", ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleValidationException(
+            ConstraintViolationException ex,
+            HttpServletRequest request
+    ) {
+        String messages = ex.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining("; "));
+
+        log.warn("Ошибка валидации при обращении к {}: {}", request.getRequestURI(), messages);
+
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                "Validation failed",
+                messages,
+                request.getRequestURI()
+        );
+    }
+
+
+    private ResponseEntity<ApiError> buildError(
+            HttpStatus status,
+            String error,
+            String message,
+            String path
+    ) {
+        ApiError apiError = new ApiError(
+                status.value(),
+                error,
+                message,
+                path,
+                Instant.now()
+        );
+        return ResponseEntity.status(status).body(apiError);
     }
 }
-

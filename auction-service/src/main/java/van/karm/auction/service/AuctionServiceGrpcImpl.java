@@ -31,13 +31,18 @@ public class AuctionServiceGrpcImpl extends AuctionServiceGrpc.AuctionServiceImp
 
         var auction = auctionOpt.get();
 
+        boolean isPublic = !auction.getIsPrivate();
+        boolean allowed = isPublic || auction.getAllowedUsers()
+                .contains(UUID.fromString(request.getUserId()));
+
         GetAuctionResponse response = GetAuctionResponse.newBuilder()
                 .setId(auction.getId().toString())
                 .setStartPrice(MoneyConverter.toMoney(auction.getStartPrice()))
                 .setBidIncrement(MoneyConverter.toMoney(auction.getBidIncrement()))
                 .setLastBidAmount(MoneyConverter.toMoney(auction.getLastBid()))
-                .setIsPrivate(auction.getIsPrivate())
+                .setIsPrivate(isPublic)
                 .setStatus(auction.getStatus().name())
+                .setAllowed(allowed)
                 .setCurrency(auction.getCurrency().name())
                 .build();
 

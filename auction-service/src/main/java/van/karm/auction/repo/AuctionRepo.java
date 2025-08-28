@@ -16,11 +16,14 @@ SELECT a.id as id,
        a.is_private as isPrivate,
        a.status as status,
        a.currency as currency,
-       (SELECT MAX(b.amount)\s
-        FROM bid b\s
-        WHERE b.auction_id = a.id) as lastBid
+       (SELECT MAX(b.amount)
+        FROM bid b
+        WHERE b.auction_id = a.id) as lastBid,
+       COALESCE(array_agg(au.user_id), '{}') AS allowedUsers
 FROM auction a
+LEFT JOIN auction_allowed_users au ON au.auction_id = a.id
 WHERE a.id = :auctionId
+GROUP BY a.id, a.start_price, a.bid_increment, a.is_private, a.status, a.currency
 """, nativeQuery = true)
     Optional<AuctionForBidProjection> findAuctionWithLastBid(UUID auctionId);
 }

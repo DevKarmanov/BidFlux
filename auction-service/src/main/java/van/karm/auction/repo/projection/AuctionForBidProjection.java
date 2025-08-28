@@ -4,6 +4,7 @@ import van.karm.auction.model.AuctionStatus;
 import van.karm.auction.model.CurrencyType;
 
 import java.math.BigDecimal;
+import java.util.Set;
 import java.util.UUID;
 
 public interface AuctionForBidProjection {
@@ -14,4 +15,5 @@ public interface AuctionForBidProjection {
     AuctionStatus getStatus();
     CurrencyType getCurrency();
     BigDecimal getLastBid();
+    Set<UUID> getAllowedUsers();
 }

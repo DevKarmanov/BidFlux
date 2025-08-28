@@ -5,6 +5,7 @@ import io.grpc.StatusRuntimeException;
 import jakarta.persistence.EntityNotFoundException;
 import van.karm.bid.exception.InvalidArgumentException;
 import van.karm.bid.exception.ServiceUnavailableException;
+import van.karm.bid.exception.UnauthenticatedException;
 
 public class GrpcExceptionHandler {
 
@@ -13,6 +14,7 @@ public class GrpcExceptionHandler {
         switch (code) {
             case UNKNOWN -> throw new RuntimeException(e.getMessage());
             case NOT_FOUND -> throw new EntityNotFoundException(e.getMessage());
+            case UNAUTHENTICATED -> throw new UnauthenticatedException(e.getMessage());
             case INVALID_ARGUMENT -> throw new InvalidArgumentException(e.getMessage());
             case UNAVAILABLE -> throw new ServiceUnavailableException(e.getMessage());
             default -> throw new RuntimeException("gRPC error: " + e.getMessage(), e);

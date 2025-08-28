@@ -39,12 +39,14 @@ databaseChangeLog:
             columns:
               - column:
                   name: auction_id
+
         - createIndex:
             indexName: idx_bid_user_id
             tableName: bid
             columns:
               - column:
                   name: user_id
+
         - createIndex:
             indexName: idx_bid_auction_amount
             tableName: bid
@@ -62,3 +64,17 @@ databaseChangeLog:
             referencedTableName: auction
             referencedColumnNames: id
             onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            constraintName: fk_bid_user
+            baseTableName: bid
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - sql:
+            sql: >
+              ALTER TABLE bid
+              ADD CONSTRAINT chk_bid_amount_nonnegative
+              CHECK (amount >= 0);

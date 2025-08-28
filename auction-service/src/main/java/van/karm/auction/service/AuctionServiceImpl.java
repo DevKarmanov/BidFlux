@@ -1,9 +1,11 @@
 package van.karm.auction.service;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import van.karm.auction.dto.request.CreateAuction;
@@ -21,7 +23,7 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class AuctionServiceImpl implements AuctionService{
-
+    private final Logger log = LoggerFactory.getLogger(AuctionServiceImpl.class);
     private final AuctionRepo auctionRepo;
     private final PasswordEncoder argon2;
 
@@ -42,7 +44,7 @@ public class AuctionServiceImpl implements AuctionService{
                 auctionInfo.getStartPrice(),
                 auctionInfo.getBidIncrement(),
                 auctionInfo.getReservePrice(),
-                auctionInfo.getIsPrivate(),
+                auctionInfo.getIsPrivate(),//todo установить хозяина аукциона
                 accessCodeHash,
                 AuctionStatus.ACTIVE,     //todo брать время окончания аукциона и запланировать автоматическую установку его статуса на FINISHED
                 auctionInfo.getStartDate(),
@@ -54,24 +56,35 @@ public class AuctionServiceImpl implements AuctionService{
         return new CreatedAuction(auction.getId(),accessCode);
     }
 
+    @Transactional
     @Override
-    public AuctionInfo getAuctionInfo(@NotNull UUID id, String password) {
-        Auction auction = auctionRepo.findById(id)
-                .orElseThrow(()->new EntityNotFoundException("Auction with id "+id+" not found"));
+    public AuctionInfo getAuctionInfo(Jwt jwt, UUID auctionId, String password) {
+        UUID userId = UUID.fromString(jwt.getClaim("userId"));
 
-        if (auction.isPrivate()) {
-            if (password == null){
-                throw new AccessDeniedException("Password is null");
-            }
-            boolean hasAccess = argon2.matches(password,auction.getAccessCodeHash());
-            if (hasAccess) { //todo обратиться к микросервису auth и получить userId из токена и добавить этого пользователя в список разрешенных
-                return AuctionMapper.toAuctionInfo(auction,true);
-            }else {
-                throw new AccessDeniedException("Auction password does not match");
-            }
-        }else {
-            return AuctionMapper.toAuctionInfo(auction,false);
+        Auction auction = auctionRepo.findById(auctionId)
+                .orElseThrow(() -> new EntityNotFoundException("Auction with id " + auctionId + " not found"));
+
+        boolean isAllowed = !auction.isPrivate() || checkAndGrantAccess(auction, userId, password);
+
+        return AuctionMapper.toAuctionInfo(auction, isAllowed);
+    }
+
+    private boolean checkAndGrantAccess(Auction auction, UUID userId, String password) {
+        if (password == null || password.isBlank()) {
+            throw new AccessDeniedException("Password is required for private auction");
         }
 
+        if (!argon2.matches(password.trim(), auction.getAccessCodeHash())) {
+            throw new AccessDeniedException("Auction password does not match");
+        }
+
+        if (auction.getAllowedUserIds().add(userId)) {
+            auctionRepo.save(auction);
+            log.info("User {} added to allowed users list", userId);
+        }
+
+        return true;
     }
+
+
 }

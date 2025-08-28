@@ -3,17 +3,22 @@ server:
 
 grpc:
   server:
-    port: 5434
+    port: 5436
     security:
       enabled: true
-      certificate-chain: classpath:certs/server-cert.pem
-      private-key: classpath:certs/server-key.pem
+      certificate-chain: classpath:certs/grpc/server-auction-cert.pem # замените на ваш cert
+      private-key: classpath:certs/grpc/server-auction-key.pem        # замените на ваш key
 
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8083/.well-known/jwks.json # замените на ваш path to pub key
   datasource:
-    url: jdbc:postgresql://localhost:local_db_port/db_name
-    password: db_password
-    username: db_user
+    url: jdbc:postgresql://localhost:5432/your_db_name                  # имя БД
+    username: your_db_user                                              # пользователь БД
+    password: your_db_password                                          # пароль БД
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
@@ -22,3 +27,4 @@ spring:
     hibernate:
       ddl-auto: none
     open-in-view: false
+

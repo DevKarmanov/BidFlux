@@ -4,13 +4,12 @@ option java_multiple_files = true; //Разделять скоимплирова
 option java_package = "van.karm.auction"; //Package для сгенерированных классов (обычно соответствующий структуре модуля)
 option java_outer_classname = "AuctionServiceMessages"; //Это имя "оболочки" (outer class) для всех сгенерированных классов
 
-import "google/protobuf/timestamp.proto";
-
 service AuctionService {
   rpc GetAuctionInfo (GetAuctionRequest) returns (GetAuctionResponse);
 }
 
 message GetAuctionRequest {
+  string userId = 2;
   string auctionId = 1;
 }
 
@@ -22,6 +21,7 @@ message GetAuctionResponse {
   string status = 6;
   string currency = 9;
   Money lastBidAmount = 10;
+  bool allowed = 11;
 }
 
 message Money {

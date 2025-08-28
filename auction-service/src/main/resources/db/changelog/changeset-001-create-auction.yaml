@@ -46,9 +46,6 @@ databaseChangeLog:
                   name: access_code_hash
                   type: varchar(255)
               - column:
-                  name: allowed_user_ids
-                  type: uuid[]
-              - column:
                   name: status
                   type: varchar(50)
                   constraints:
@@ -97,3 +94,48 @@ databaseChangeLog:
               ALTER TABLE auction
               ADD CONSTRAINT chk_start_end_reserve
               CHECK (start_date < end_date AND reserve_price >= start_price);
+
+        # таблица для allowed users
+        - createTable:
+            tableName: auction_allowed_users
+            columns:
+              - column:
+                  name: auction_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: auction_allowed_users
+            baseColumnNames: auction_id
+            referencedTableName: auction
+            referencedColumnNames: id
+            constraintName: fk_auction_allowed_users_auction
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: auction_allowed_users
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_auction_allowed_users_user
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_auction_allowed_users_auction
+            tableName: auction_allowed_users
+            columns:
+              - column:
+                  name: auction_id
+
+        - createIndex:
+            indexName: idx_auction_allowed_users_user
+            tableName: auction_allowed_users
+            columns:
+              - column:
+                  name: user_id

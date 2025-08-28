@@ -22,6 +22,7 @@ import van.karm.auction.service.AuctionServiceImpl;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 @WebMvcTest(AuctionControllerImpl.class)
 @Import(AuctionServiceImpl.class)
@@ -51,7 +53,6 @@ public class AuctionControllerTest {
 
     @MockitoBean
     private PasswordEncoder argon2;
-
 
     private CreateAuction validPublicCreateAuctionDto() {
         return new CreateAuction(
@@ -78,6 +79,7 @@ public class AuctionControllerTest {
                 .status(AuctionStatus.ACTIVE)
                 .isPrivate(isPrivate)
                 .startDate(LocalDateTime.now())
+                .allowedUserIds(new HashSet<>())
                 .endDate(LocalDateTime.now().plusDays(1))
                 .currency(CurrencyType.USD)
                 .build();
@@ -85,11 +87,11 @@ public class AuctionControllerTest {
         return auction;
     }
 
-
     private ResultActions postCreateAuction(CreateAuction auction) throws Exception {
         return mockMvc.perform(post("/auction")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(auction)));
+                .content(objectMapper.writeValueAsString(auction))
+                .with(jwt().jwt(jwt -> jwt.claim("userId", UUID.randomUUID().toString()))));
     }
 
     private void postCreateAuctionExpectBadRequest(CreateAuction auction) throws Exception {
@@ -97,11 +99,11 @@ public class AuctionControllerTest {
     }
 
     private ResultActions postGetAuction(UUID id, String password) throws Exception {
-        MockHttpServletRequestBuilder builder = post("/auction/" + id);
+        MockHttpServletRequestBuilder builder = post("/auction/" + id)
+                .with(jwt().jwt(jwt -> jwt.claim("userId", UUID.randomUUID().toString())));
         if (password != null) builder.param("password", password);
         return mockMvc.perform(builder);
     }
-
 
     @Test
     void testCreateAuction_withInvalidFields_shouldReturnBadRequest() throws Exception {
@@ -122,7 +124,6 @@ public class AuctionControllerTest {
             postCreateAuctionExpectBadRequest(auction);
         }
     }
-
 
     @Test
     void testCreateAuction_withValidInfo_shouldReturnIsCreatedAndDto() throws Exception {

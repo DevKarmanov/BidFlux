@@ -2,6 +2,8 @@ package van.karm.bid.service;
 
 import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
+import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import van.karm.auction.AuctionServiceGrpc;
@@ -9,6 +11,7 @@ import van.karm.auction.GetAuctionRequest;
 import van.karm.auction.GetAuctionResponse;
 import van.karm.bid.dto.request.AddBid;
 import van.karm.bid.enums.Auction.AuctionStatus;
+import van.karm.bid.exception.AccessDeniedException;
 import van.karm.bid.exception.BidAmountException;
 import van.karm.bid.model.Bid;
 import van.karm.bid.repo.BidRepo;
@@ -24,19 +27,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BidServiceImpl implements BidService {
     private final BidRepo bidRepo;
-    private final AuctionServiceGrpc.AuctionServiceBlockingStub auctionStub;
+
+    @GrpcClient("auction-service")
+    private AuctionServiceGrpc.AuctionServiceBlockingStub auctionStub;
 
     @Transactional
     @Override
-    public void addBid(AddBid bid) {
-        //todo добавить проверку
-        /*
-        * 1) Существует ли пользователь с таким id
-        * 2) Имеет ли этот пользователь доступ к аукциону (как идея, добавить ауцкиону список учавствующих)
-        * 3) Не закончился ли аукцион
-        * 4) Имеет ли смысл текущая ставка (она должна проходить все фильтры и быть выше текущей)
-        * */
-        GetAuctionRequest request = GetAuctionRequest.newBuilder()//todo получить boolean значение разрешено ли мне ставить ставку
+    public void addBid(Jwt jwt, AddBid bid) {
+       String userId = jwt.getClaim("userId");
+
+        GetAuctionRequest request = GetAuctionRequest.newBuilder()
+                .setUserId(userId)
                 .setAuctionId(bid.auctionId().toString())
                 .build();
 
@@ -46,13 +47,15 @@ public class BidServiceImpl implements BidService {
             var status = AuctionStatus.valueOf(response.getStatus());
             if (status == AuctionStatus.ACTIVE) {
                validateBidAmount(bid,response);
-               //todo проверить могу ли я ставить ставку
+                if (!response.getAllowed()){
+                    throw new AccessDeniedException("You have been denied the opportunity to place a bet");
+                }
 
                 Bid newBid = Bid.builder()
                         .amount(bid.amount())
                         .auctionId(bid.auctionId())
                         .createdAt(LocalDateTime.now())
-                        .userId(UUID.randomUUID()) //todo не забыть поменять на настоящий id пользователя, полученный из auth модуля
+                        .userId(UUID.fromString(userId))
                         .build();
 
                 bidRepo.save(newBid);
