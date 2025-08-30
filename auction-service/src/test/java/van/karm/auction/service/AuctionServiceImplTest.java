@@ -10,6 +10,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 import van.karm.auction.dto.request.CreateAuction;
 import van.karm.auction.dto.response.CreatedAuction;
 import van.karm.auction.exception.AccessDeniedException;
@@ -30,6 +32,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuctionServiceImplTest {
+    @Mock
+    private TransactionTemplate transactionTemplate;
 
     @Mock
     private AuctionRepo auctionRepo;
@@ -75,6 +79,11 @@ class AuctionServiceImplTest {
 
     @Test
     void testCreateAuction_ShouldReturnValidPassword() {
+        when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return callback.doInTransaction(null);
+        });
+
         when(argon2.encode(any(String.class))).thenReturn("passwordHash");
 
         CreatedAuction publicAuction = auctionService.createAuction(validCreateAuctionDto(false));
@@ -107,5 +116,7 @@ class AuctionServiceImplTest {
         assertThrows(AccessDeniedException.class,
                 () -> auctionService.getAuctionInfo(jwt, UUID.randomUUID(), null));
     }
+
+
 
 }

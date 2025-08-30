@@ -12,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.support.TransactionTemplate;
 import van.karm.auction.dto.request.CreateAuction;
 import van.karm.auction.dto.response.CreatedAuction;
 import van.karm.auction.model.Auction;
@@ -38,6 +39,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 @WebMvcTest(AuctionControllerImpl.class)
 @Import(AuctionServiceImpl.class)
 public class AuctionControllerTest {
+    @MockitoBean
+    private TransactionTemplate transactionTemplate;
 
     @Autowired
     private MockMvc mockMvc;
