@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: Bid API
+  version: 1.0.0
+paths:
+  /bid:
+    post:
+      summary: Добавить ставку
+      description: >
+        Позволяет авторизованному пользователю сделать ставку на конкретный аукцион.
+      
+        Важно: если аукцион является приватным, то перед первой ставкой необходимо предварительно обратиться к эндпоинту `/auction/{id}` 
+        для получения доступа. Это действие требуется только один раз для каждого приватного аукциона — при последующих ставках повторное обращение не требуется.
+        Без предварительного запроса попытка поставить ставку будет отклонена с ошибкой 403.
+      operationId: addBid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddBid'
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Bearer accessToken для аутентификации пользователя
+      responses:
+        '200':
+          description: Ставка успешно добавлена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Bid added successfully"
+        '400':
+          description: Ошибка валидации запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                invalidArguments:
+                  summary: Некорректные аргументы
+                  value:
+                    status: 400
+                    error: "Invalid argument"
+                    message: "auctionId must not be null; amount must be positive"
+                    path: "/bid"
+                    timestamp: "2025-08-30T14:40:00Z"
+        '401':
+          description: Неавторизованный пользователь
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 401
+                error: "Unauthorized"
+                message: "JWT token is missing or invalid"
+                path: "/bid"
+                timestamp: "2025-08-30T14:40:01Z"
+        '403':
+          description: Доступ запрещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                accessDenied:
+                  summary: Ставка отклонена
+                  value:
+                    status: 403
+                    error: "Bid denied"
+                    message: "Bid amount too low or auction closed"
+                    path: "/bid"
+                    timestamp: "2025-08-30T14:40:02Z"
+        '404':
+          description: Сущность не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 404
+                error: "Entity not found"
+                message: "Auction not found"
+                path: "/bid"
+                timestamp: "2025-08-30T14:40:03Z"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 500
+                error: "Server error"
+                message: "NullPointerException at BidService.addBid"
+                path: "/bid"
+                timestamp: "2025-08-30T14:40:04Z"
+
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: HTTP статус ошибки
+          example: 400
+        error:
+          type: string
+          description: Краткое описание ошибки
+          example: "Bad Request"
+        message:
+          type: string
+          description: Подробное сообщение об ошибке
+          example: "Validation failed: auctionId must not be null"
+        path:
+          type: string
+          description: Путь запроса, на котором произошла ошибка
+          example: "/bid"
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+          example: "2025-08-30T14:40:00Z"
+      required:
+        - status
+        - error
+        - message
+        - path
+        - timestamp
+
+    AddBid:
+      type: object
+      required:
+        - auctionId
+        - amount
+      properties:
+        auctionId:
+          description: Уникальный идентификатор аукциона
+          type: string
+          format: uuid
+        amount:
+          description: Сумма ставки, должна быть равна или выше стартовой цены (или выше предыдущей ставки на фиксированный шаг)
+          type: number
+          format: float
+          minimum: 0.01

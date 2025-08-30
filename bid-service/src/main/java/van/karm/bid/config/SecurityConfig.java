@@ -17,12 +17,28 @@ import van.karm.bid.config.exception.RestAuthenticationEntryPoint;
 public class SecurityConfig {
     private final RestAccessDeniedHandler accessDeniedHandler;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
+    private static final String[] ACTUATOR_WHITELIST = {
+            "/actuator",
+            "/actuator/**"
+    };
+    private static final String[] SWAGGER_WHITELIST = {
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/webjars/**",
+            "/swagger-resources/**",
+            "/swagger-resources/configuration/ui",
+            "/swagger-resources/configuration/security",
+            "/openapi.yaml"
+    };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(ACTUATOR_WHITELIST).permitAll()
+                        .requestMatchers(SWAGGER_WHITELIST).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

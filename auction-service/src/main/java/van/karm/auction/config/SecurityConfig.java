@@ -24,7 +24,12 @@ public class SecurityConfig {
             "/webjars/**",
             "/swagger-resources/**",
             "/swagger-resources/configuration/ui",
-            "/swagger-resources/configuration/security"
+            "/swagger-resources/configuration/security",
+            "/openapi.yaml"
+    };
+    private static final String[] ACTUATOR_WHITELIST = {
+            "/actuator",
+            "/actuator/**"
     };
 
     @Bean
@@ -32,6 +37,7 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(ACTUATOR_WHITELIST).permitAll()
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
                         .anyRequest().authenticated()
                 )

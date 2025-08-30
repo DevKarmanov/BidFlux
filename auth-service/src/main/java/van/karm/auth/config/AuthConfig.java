@@ -29,6 +29,20 @@ public class AuthConfig {
     private final JwtAuthenticationService jwtAuthenticationService;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
+    private static final String[] SWAGGER_WHITELIST = {
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/webjars/**",
+            "/swagger-resources/**",
+            "/swagger-resources/configuration/ui",
+            "/swagger-resources/configuration/security",
+            "/openapi.yaml"
+    };
+    private static final String[] ACTUATOR_WHITELIST = {
+            "/actuator",
+            "/actuator/**"
+    };
 
     @Bean
     public GrpcAuthenticationReader grpcAuthenticationReader() {
@@ -58,8 +72,9 @@ public class AuthConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // ВАЖНО!
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/.well-known/jwks.json").permitAll()
+                        .requestMatchers("/auth/**","/.well-known/jwks.json").permitAll()
+                        .requestMatchers(ACTUATOR_WHITELIST).permitAll()
+                        .requestMatchers(SWAGGER_WHITELIST).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

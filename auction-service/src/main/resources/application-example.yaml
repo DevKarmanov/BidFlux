@@ -6,8 +6,8 @@ grpc:
     port: 5436
     security:
       enabled: true
-      certificate-chain: classpath:certs/grpc/server-auction-cert.pem # замените на ваш cert
-      private-key: classpath:certs/grpc/server-auction-key.pem        # замените на ваш key
+      certificate-chain: classpath:certs/grpc/server-auction-cert-example.pem # замените на ваш cert
+      private-key: classpath:certs/grpc/server-auction-key-example.pem        # замените на ваш key
 
 spring:
   security:
@@ -27,4 +27,10 @@ spring:
     hibernate:
       ddl-auto: none
     open-in-view: false
+  main:
+    banner-mode: off
+
+springdoc:
+  swagger-ui:
+    url: /openapi.yaml
 

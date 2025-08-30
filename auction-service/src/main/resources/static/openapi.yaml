@@ -1,0 +1,341 @@
+openapi: 3.0.3
+info:
+  title: Auction API
+  version: 1.0.0
+paths:
+  /auction:
+    post:
+      summary: Создать новый аукцион
+      description: Создаёт новый аукцион с указанной информацией. Все поля обязательны, кроме тех, что явно указаны как необязательные.
+      operationId: createAuction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuction'
+      responses:
+        '200':
+          description: Генерирует пароль при необходимости
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionInfo'
+              examples:
+                withPassword:
+                  summary: Аукцион приватный
+                  value:
+                    id: "123e4567-e89b-12d3-a456-426614174000"
+                    password: "a1b2c3d4-e5f6-7890-1234-56789abcdef0"
+                withoutPassword:
+                  summary: Аукцион публичный
+                  value:
+                    id: "123e4567-e89b-12d3-a456-426614174001"
+                    password: null
+        '400':
+          description: Ошибка валидации запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                invalidArguments:
+                  summary: Некорректные аргументы
+                  value:
+                    status: 400
+                    error: "Invalid arguments"
+                    message: "startPrice must be positive"
+                    path: "/auction"
+                    timestamp: "2025-08-30T14:30:00Z"
+                validationError:
+                  summary: Ошибка валидации DTO
+                  value:
+                    status: 400
+                    error: "Validation error"
+                    message: "title: must not be blank; endDate: must be after startDate"
+                    path: "/auction"
+                    timestamp: "2025-08-30T14:30:01Z"
+        '401':
+          description: Неавторизованный пользователь
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 401
+                error: "Unauthorized"
+                message: "JWT token is missing or invalid"
+                path: "/auction"
+                timestamp: "2025-08-30T14:35:01Z"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 500
+                error: "Server error"
+                message: "NullPointerException at AuctionService.createAuction"
+                path: "/auction"
+                timestamp: "2025-08-30T14:30:05Z"
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Bearer accessToken для аутентификации пользователя
+
+  /auction/{id}:
+    post:
+      summary: Получить информацию о конкретном аукционе
+      description: Возвращает детальную информацию о выбранном аукционе. Если аукцион приватный, необходимо передать пароль.
+      operationId: auctionInfo
+      parameters:
+        - name: id
+          in: path
+          description: Уникальный идентификатор аукциона
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: password
+          in: query
+          description: Пароль от аукциона, указывается для приватных аукционов
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Bearer accessToken для аутентификации пользователя
+      responses:
+        '200':
+          description: Детальная информация о выбранном аукционе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionInfo'
+        '404':
+          description: Сущность не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 404
+                error: "Entity not found"
+                message: "Auction with id 123e4567-e89b-12d3-a456-426614174000 not found"
+                path: "/auction/123e4567-e89b-12d3-a456-426614174000"
+                timestamp: "2025-08-30T14:30:02Z"
+        '401':
+          description: Неавторизованный пользователь
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 401
+                error: "Unauthorized"
+                message: "JWT token is missing or invalid"
+                path: "/auction"
+                timestamp: "2025-08-30T14:35:01Z"
+        '403':
+          description: Доступ запрещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                accessDenied:
+                  summary: Пароль не указан или неверный
+                  value:
+                    status: 403
+                    error: "Access denied"
+                    message: "Password is required for private auction"
+                    path: "/auction/123e4567-e89b-12d3-a456-426614174000"
+                    timestamp: "2025-08-30T14:30:03Z"
+                unauthenticated:
+                  summary: Неавторизованный пользователь
+                  value:
+                    status: 403
+                    error: "Access denied"
+                    message: "User not authenticated"
+                    path: "/auction/123e4567-e89b-12d3-a456-426614174000"
+                    timestamp: "2025-08-30T14:30:04Z"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 500
+                error: "Server error"
+                message: "NullPointerException at AuctionService.getAuction"
+                path: "/auction/123e4567-e89b-12d3-a456-426614174000"
+                timestamp: "2025-08-30T14:30:05Z"
+
+
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: HTTP статус ошибки
+          example: 400
+        error:
+          type: string
+          description: Краткое описание ошибки
+          example: "Bad Request"
+        message:
+          type: string
+          description: Подробное сообщение об ошибке
+          example: "Validation failed: startPrice must be positive"
+        path:
+          type: string
+          description: Путь запроса, на котором произошла ошибка
+          example: "/auction"
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+          example: "2025-08-30T14:40:00Z"
+      required:
+        - status
+        - error
+        - message
+        - path
+        - timestamp
+
+    CreateAuction:
+      type: object
+      required:
+        - title
+        - description
+        - startPrice
+        - bidIncrement
+        - reservePrice
+        - isPrivate
+        - startDate
+        - endDate
+        - currency
+      properties:
+        title:
+          description: Заголовок аукциона, от 3 до 100 символов
+          type: string
+          minLength: 3
+          maxLength: 100
+        description:
+          description: Подробное описание аукциона, минимум 10 символов
+          type: string
+          minLength: 10
+        startPrice:
+          description: Стартовая цена аукциона, не может быть отрицательной
+          type: number
+          format: float
+          minimum: 0.0
+        bidIncrement:
+          description: Минимальный шаг ставки, не может быть меньше 0.1
+          type: number
+          format: float
+          minimum: 0.1
+        reservePrice:
+          description: Резервная цена, ниже которой аукцион не будет продан
+          type: number
+          format: float
+          minimum: 0.1
+        isPrivate:
+          description: Флаг приватного аукциона (true — приватный, false — публичный)
+          type: boolean
+        startDate:
+          description: Дата и время начала аукциона, не может быть в прошлом
+          type: string
+          format: date-time
+          example: "2025-08-30T14:14:02"
+        endDate:
+          description: Дата и время окончания аукциона, должна быть позже даты начала
+          type: string
+          format: date-time
+          example: "2025-08-30T16:14:02"
+        currency:
+          description: Валюта аукциона
+          type: string
+          enum: [USD, EUR, RUB, BYN, GBP, CNY, JPY, CHF, AUD, CAD]
+
+    CreatedAuction:
+      type: object
+      properties:
+        id:
+          description: Уникальный идентификатор созданного аукциона
+          type: string
+          format: uuid
+        password:
+          description: Сгенерированный пароль от аукциона. Для публичного аукциона может быть null
+          type: string
+          format: uuid
+
+    AuctionInfo:
+      type: object
+      properties:
+        id:
+          description: Уникальный идентификатор аукциона
+          type: string
+          format: uuid
+        title:
+          description: Заголовок аукциона
+          type: string
+        description:
+          description: Подробное описание аукциона
+          type: string
+        startPrice:
+          description: Стартовая цена
+          type: number
+          format: float
+        bidIncrement:
+          description: Минимальный шаг ставки
+          type: number
+          format: float
+        reservePrice:
+          description: Резервная цена аукциона
+          type: number
+          format: float
+        isPrivate:
+          description: Флаг приватного аукциона
+          type: boolean
+        status:
+          description: Статус аукциона
+          type: string
+          enum: [ACTIVE, INACTIVE, FINISHED]
+        startDate:
+          description: Дата и время начала аукциона
+          type: string
+          format: date-time
+          example: "2025-08-30T14:14:02"
+        endDate:
+          description: Дата и время окончания аукциона
+          type: string
+          format: date-time
+          example: "2025-08-30T16:14:02"
+        currency:
+          description: Валюта аукциона
+          type: string
+          enum: [USD, EUR, RUB, BYN, GBP, CNY, JPY, CHF, AUD, CAD]
+      required:
+        - id
+        - title
+        - description
+        - startPrice
+        - bidIncrement
+        - reservePrice
+        - isPrivate
+        - status
+        - startDate
+        - endDate
+        - currency
+

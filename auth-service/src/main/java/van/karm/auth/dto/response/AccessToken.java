@@ -1,4 +1,4 @@
 package van.karm.auth.dto.response;
 
-public record AccessToken(String access_token, String token_type, long expires_at) {
+public record AccessToken(String accessToken, String tokenType, long expiresAt) {
 }
