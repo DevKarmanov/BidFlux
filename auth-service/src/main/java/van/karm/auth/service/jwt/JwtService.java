@@ -4,15 +4,12 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import jakarta.transaction.Transactional;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import van.karm.auth.config.properties.JwtProperties;
 import van.karm.auth.dto.response.AccessToken;
 import van.karm.auth.dto.response.RefreshToken;
-import van.karm.auth.model.RefreshTokenEntity;
-import van.karm.auth.model.UserEntity;
 import van.karm.auth.repo.RefreshTokenRepo;
 
 import java.nio.file.Files;
@@ -89,7 +86,6 @@ public class JwtService {
     }
 
 
-    @Transactional
     public AccessToken generateAccessTokenFromRefresh(String refreshJwt) {
         var claims = parse(refreshJwt);
         var jti = claims.getId();
@@ -103,34 +99,30 @@ public class JwtService {
         return generateAccessToken(projection.getUsername(), userId, projection.getRoles());
     }
 
-    @Transactional
-    public RefreshToken generateRefreshToken(UserEntity user, String deviceId) {
+
+    public RefreshToken generateRefreshToken(UUID userId, String username, String deviceId) {
         Instant now = Instant.now();
         Instant exp = now.plus(props.refreshTtlDays(), ChronoUnit.DAYS);
-
         String jti = UUID.randomUUID().toString();
 
-        var refreshTokenEntity = new RefreshTokenEntity(
+        refreshTokenRepo.upsertRefreshToken(
                 jti,
-                user,
-                LocalDateTime.ofInstant(now, ZoneOffset.UTC),
-                LocalDateTime.ofInstant(exp, ZoneOffset.UTC),
+                userId,
                 deviceId,
-                false);
-
-
-        refreshTokenRepo.save(refreshTokenEntity);
+                LocalDateTime.ofInstant(now, ZoneOffset.UTC),
+                LocalDateTime.ofInstant(exp, ZoneOffset.UTC)
+        );
 
         return new RefreshToken(
                 jti,
                 LocalDateTime.ofInstant(now, ZoneOffset.UTC),
                 LocalDateTime.ofInstant(exp, ZoneOffset.UTC),
-                generateRefreshTokenJwt(user.getUsername(),jti, user.getId())
+                generateRefreshTokenJwt(username, jti, userId, now)
         );
     }
 
-    public String generateRefreshTokenJwt(String userName, String jti, UUID userId) {
-        Instant now = Instant.now();
+
+    public String generateRefreshTokenJwt(String userName, String jti, UUID userId,  Instant now) {
         Instant exp = now.plus(props.refreshTtlDays(), ChronoUnit.DAYS);
 
         return Jwts.builder()

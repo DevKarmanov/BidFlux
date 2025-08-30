@@ -48,15 +48,27 @@ databaseChangeLog:
             onDelete: CASCADE
 
         - createIndex:
-            indexName: idx_refresh_tokens_user_id
+            indexName: idx_refresh_tokens_jti_revoked
+            tableName: refresh_tokens
+            columns:
+              - column:
+                  name: jti
+              - column:
+                  name: revoked
+
+        - createIndex:
+            indexName: ux_refresh_tokens_user_device
             tableName: refresh_tokens
             columns:
               - column:
                   name: user_id
+              - column:
+                  name: device_id
+            unique: true
 
         - createIndex:
-            indexName: idx_refresh_tokens_revoked
+            indexName: idx_refresh_tokens_expires_at
             tableName: refresh_tokens
             columns:
               - column:
-                  name: revoked
+                  name: expires_at

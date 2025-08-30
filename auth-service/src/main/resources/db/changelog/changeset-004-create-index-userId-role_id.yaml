@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 4
+      author: ivan
+      changes:
+          - sql:
+              splitStatements: false
+              stripComments: true
+              sql: |
+                CREATE UNIQUE INDEX ux_users_roles_user_role ON users_roles(user_id, role_id);

@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2
+      author: ivan
+      changes:
+        - createTable:
+            tableName: auction_allowed_users
+            columns:
+              - column:
+                  name: auction_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: auction_allowed_users
+            baseColumnNames: auction_id
+            referencedTableName: auction
+            referencedColumnNames: id
+            constraintName: fk_auction_allowed_users_auction
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: auction_allowed_users
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_auction_allowed_users_user
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_auction_allowed_users_auction_user
+            tableName: auction_allowed_users
+            columns:
+              - column:
+                  name: auction_id
+              - column:
+                  name: user_id

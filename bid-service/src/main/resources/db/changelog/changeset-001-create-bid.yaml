@@ -55,7 +55,7 @@ databaseChangeLog:
                   name: auction_id
               - column:
                   name: amount
-                  descending: true
+            unique: false
 
         - addForeignKeyConstraint:
             constraintName: fk_bid_auction

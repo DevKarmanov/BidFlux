@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import van.karm.auction.dto.request.CreateAuction;
 import van.karm.auction.dto.response.AuctionInfo;
 import van.karm.auction.dto.response.CreatedAuction;
@@ -26,16 +26,19 @@ public class AuctionServiceImpl implements AuctionService{
     private final Logger log = LoggerFactory.getLogger(AuctionServiceImpl.class);
     private final AuctionRepo auctionRepo;
     private final PasswordEncoder argon2;
+    private final TransactionTemplate transactionTemplate;
 
-    @Transactional
+
     @Override
     public CreatedAuction createAuction(CreateAuction auctionInfo) {
-        String accessCode = null;
+        String accessCode;
         String accessCodeHash = null;
 
         if (auctionInfo.getIsPrivate()) {
             accessCode = StringGenerator.generateString(64);
             accessCodeHash = argon2.encode(accessCode);
+        } else {
+            accessCode = null;
         }
 
         Auction auction = new Auction(
@@ -52,11 +55,13 @@ public class AuctionServiceImpl implements AuctionService{
                 auctionInfo.getCurrency()
         );
 
-        auctionRepo.save(auction);
-        return new CreatedAuction(auction.getId(),accessCode);
+        return transactionTemplate.execute(status -> {
+            auctionRepo.save(auction);
+            return new CreatedAuction(auction.getId(), accessCode);
+        });
     }
 
-    @Transactional
+
     @Override
     public AuctionInfo getAuctionInfo(Jwt jwt, UUID auctionId, String password) {
         UUID userId = UUID.fromString(jwt.getClaim("userId"));
@@ -64,24 +69,22 @@ public class AuctionServiceImpl implements AuctionService{
         Auction auction = auctionRepo.findById(auctionId)
                 .orElseThrow(() -> new EntityNotFoundException("Auction with id " + auctionId + " not found"));
 
-        boolean isAllowed = !auction.isPrivate() || checkAndGrantAccess(auction, userId, password);
+        boolean isAllowed = !auction.isPrivate() || checkAndGrantAccess(auctionId, userId, password, auction.getAccessCodeHash());
 
         return AuctionMapper.toAuctionInfo(auction, isAllowed);
     }
 
-    private boolean checkAndGrantAccess(Auction auction, UUID userId, String password) {
+    private boolean checkAndGrantAccess(UUID auctionId, UUID userId, String password, String accessCodeHash) {
         if (password == null || password.isBlank()) {
             throw new AccessDeniedException("Password is required for private auction");
         }
 
-        if (!argon2.matches(password.trim(), auction.getAccessCodeHash())) {
+        if (!argon2.matches(password.trim(), accessCodeHash)) {
             throw new AccessDeniedException("Auction password does not match");
         }
 
-        if (auction.getAllowedUserIds().add(userId)) {
-            auctionRepo.save(auction);
-            log.info("User {} added to allowed users list", userId);
-        }
+        transactionTemplate.executeWithoutResult(statusTx->auctionRepo.addAllowedUser(auctionId, userId));
+        log.info("User {} added to allowed users list", userId);
 
         return true;
     }

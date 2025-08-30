@@ -17,7 +17,6 @@ databaseChangeLog:
                   type: VARCHAR(255)
                   constraints:
                     nullable: false
-                    unique: true
               - column:
                   name: password
                   type: VARCHAR(255)
@@ -29,12 +28,6 @@ databaseChangeLog:
                   defaultValueBoolean: true
                   constraints:
                     nullable: false
-        - createIndex:
-            indexName: idx_users_username
-            tableName: users
-            columns:
-              - column:
-                  name: username
         - createTable:
             tableName: users_roles
             columns:
@@ -74,3 +67,9 @@ databaseChangeLog:
             columns:
               - column:
                   name: role_id
+        - sql:
+            splitStatements: false
+            stripComments: true
+            sql: |
+              CREATE UNIQUE INDEX ux_users_username_lower ON users (LOWER(username));
+

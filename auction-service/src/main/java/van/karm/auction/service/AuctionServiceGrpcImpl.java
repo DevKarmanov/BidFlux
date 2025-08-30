@@ -5,11 +5,12 @@ import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.server.service.GrpcService;
 import van.karm.auction.AuctionServiceGrpc;
-import van.karm.auction.GetAuctionRequest;
-import van.karm.auction.GetAuctionResponse;
+import van.karm.auction.ValidateBidRequest;
+import van.karm.auction.ValidateBidResponse;
 import van.karm.auction.repo.AuctionRepo;
 import van.karm.auction.service.converter.MoneyConverter;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @GrpcService
@@ -18,9 +19,10 @@ public class AuctionServiceGrpcImpl extends AuctionServiceGrpc.AuctionServiceImp
     private final AuctionRepo auctionRepo;
 
     @Override
-    public void getAuctionInfo(GetAuctionRequest request, StreamObserver<GetAuctionResponse> responseObserver) {
-        var auctionOpt = auctionRepo.findAuctionWithLastBid(UUID.fromString(request.getAuctionId()));
-        if (auctionOpt.isEmpty()) {
+    public void validateBid(ValidateBidRequest request, StreamObserver<ValidateBidResponse> responseObserver) {
+        UUID auctionId = UUID.fromString(request.getAuctionId());
+
+        if (!auctionRepo.existsById(auctionId)) {
             responseObserver.onError(
                     Status.NOT_FOUND
                             .withDescription("Auction with id " + request.getAuctionId() + " not found")
@@ -29,24 +31,19 @@ public class AuctionServiceGrpcImpl extends AuctionServiceGrpc.AuctionServiceImp
             return;
         }
 
-        var auction = auctionOpt.get();
+        UUID userId = UUID.fromString(request.getUserId());
+        BigDecimal amount = MoneyConverter.fromMoney(request.getAmount());
 
-        boolean isPublic = !auction.getIsPrivate();
-        boolean allowed = isPublic || auction.getAllowedUsers()
-                .contains(UUID.fromString(request.getUserId()));
+        var exceptionMessage = auctionRepo.validateBid(auctionId, userId, amount);
 
-        GetAuctionResponse response = GetAuctionResponse.newBuilder()
-                .setId(auction.getId().toString())
-                .setStartPrice(MoneyConverter.toMoney(auction.getStartPrice()))
-                .setBidIncrement(MoneyConverter.toMoney(auction.getBidIncrement()))
-                .setLastBidAmount(MoneyConverter.toMoney(auction.getLastBid()))
-                .setIsPrivate(isPublic)
-                .setStatus(auction.getStatus().name())
-                .setAllowed(allowed)
-                .setCurrency(auction.getCurrency().name())
+
+        ValidateBidResponse response = ValidateBidResponse.newBuilder()
+                .setValid(exceptionMessage == null)
+                .setErrorMessage(exceptionMessage == null ? "" : exceptionMessage)
                 .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
+
 }

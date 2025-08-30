@@ -74,22 +74,10 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.SERVICE_UNAVAILABLE, "Service unavailable", ex.getMessage(), request.getRequestURI());
     }
 
-    @ExceptionHandler(AuctionInactiveException.class)
-    public ResponseEntity<ApiError> handleAuctionInactive(AuctionInactiveException ex, HttpServletRequest request) {
-        log.warn("Попытка сделать ставку в неактивном аукционе: {}", ex.getMessage());
-        return buildError(HttpStatus.BAD_REQUEST, "Auction inactive", ex.getMessage(), request.getRequestURI());
-    }
-
-    @ExceptionHandler(AuctionFinishedException.class)
-    public ResponseEntity<ApiError> handleAuctionFinished(AuctionFinishedException ex, HttpServletRequest request) {
-        log.warn("Попытка сделать ставку в завершённом аукционе: {}", ex.getMessage());
-        return buildError(HttpStatus.BAD_REQUEST, "Auction finished", ex.getMessage(), request.getRequestURI());
-    }
-
-    @ExceptionHandler(BidAmountException.class)
-    public ResponseEntity<ApiError> handleBidAmount(BidAmountException ex, HttpServletRequest request) {
-        log.warn("Ошибка размера ставки: {}", ex.getMessage());
-        return buildError(HttpStatus.BAD_REQUEST, "Invalid bid amount", ex.getMessage(), request.getRequestURI());
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("Ошибка доступа для ставки: {}", ex.getMessage());
+        return buildError(HttpStatus.FORBIDDEN, "Bid denied", ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

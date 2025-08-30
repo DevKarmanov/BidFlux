@@ -17,6 +17,7 @@ import java.util.UUID;
 @Validated
 public interface AuctionController {
 
+    //todo сделать swagger документацию
     @PostMapping
     ResponseEntity<CreatedAuction> createAuction(
             @RequestBody @Valid @NotNull(message = "Auction info must not be null") CreateAuction auctionInfo

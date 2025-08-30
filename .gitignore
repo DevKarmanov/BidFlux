@@ -7,8 +7,11 @@ application.yaml
 init/init.sql
 docker/.env
 postgres-data/
-*-key.pem
-private_jwt_key.pem
+*.pem
+*.json
+
+!*-example.pem
+!*-example.json
 
 ### IntelliJ IDEA ###
 .idea/

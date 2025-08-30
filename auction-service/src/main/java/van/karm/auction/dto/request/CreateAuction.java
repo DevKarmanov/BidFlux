@@ -1,8 +1,11 @@
 package van.karm.auction.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.With;
 import van.karm.auction.model.CurrencyType;
 
 import java.math.BigDecimal;
@@ -11,7 +14,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Getter
 @With
-public class CreateAuction{
+@Schema(description = "DTO для создания нового аукциона")
+public class CreateAuction {
+
         @NotBlank(message = "Auction title is required and cannot be blank")
         @Size(min = 3, max = 100, message = "Auction title must be between 3 and 100 characters")
         private String title;
@@ -47,5 +52,5 @@ public class CreateAuction{
 
         @NotNull(message = "Currency is required")
         private CurrencyType currency;
-
 }
+

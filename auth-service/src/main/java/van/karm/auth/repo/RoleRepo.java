@@ -4,5 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import van.karm.auth.model.Role;
 
 public interface RoleRepo extends JpaRepository<Role, Long> {
-    Role findByNameIgnoreCase(String name);
+    Long getRoleIdByNameIgnoreCase(String name);
 }

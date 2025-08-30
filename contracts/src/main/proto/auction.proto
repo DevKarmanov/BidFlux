@@ -5,23 +5,18 @@ option java_package = "van.karm.auction"; //Package для сгенериров�
 option java_outer_classname = "AuctionServiceMessages"; //Это имя "оболочки" (outer class) для всех сгенерированных классов
 
 service AuctionService {
-  rpc GetAuctionInfo (GetAuctionRequest) returns (GetAuctionResponse);
+  rpc ValidateBid(ValidateBidRequest) returns (ValidateBidResponse);
 }
 
-message GetAuctionRequest {
-  string userId = 2;
-  string auctionId = 1;
+message ValidateBidRequest {
+  string userId = 1;
+  string auctionId = 2;
+  Money amount = 3;
 }
 
-message GetAuctionResponse {
-  string id = 1;
-  Money startPrice = 2;
-  Money bidIncrement = 3;
-  bool isPrivate = 5;
-  string status = 6;
-  string currency = 9;
-  Money lastBidAmount = 10;
-  bool allowed = 11;
+message ValidateBidResponse {
+  bool valid = 1;
+  string errorMessage = 2;
 }
 
 message Money {
