@@ -72,6 +72,7 @@ public class Auction {
     @Column(name = "currency", nullable = false, length = 3)
     private CurrencyType currency;
 
+    @Builder.Default
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "auction_allowed_users",
