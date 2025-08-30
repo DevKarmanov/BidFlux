@@ -1,0 +1,22 @@
+package van.karm.auth.service.auth;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
+import van.karm.auth.model.CustomUserDetails;
+import van.karm.auth.repo.UserRepo;
+
+@Component
+@RequiredArgsConstructor
+public class CustomUserDetailsService implements UserDetailsService {
+    private final UserRepo userRepo;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepo.findByUsernameIgnoreCase(username)
+                .map(CustomUserDetails::new)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+}

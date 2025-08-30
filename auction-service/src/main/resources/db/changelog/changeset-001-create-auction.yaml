@@ -94,3 +94,4 @@ databaseChangeLog:
               ALTER TABLE auction
               ADD CONSTRAINT chk_start_end_reserve
               CHECK (start_date < end_date AND reserve_price >= start_price);
+       

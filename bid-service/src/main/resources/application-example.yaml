@@ -1,0 +1,30 @@
+server:
+  port: 8081
+
+grpc:
+  client:
+    auction-service:
+      address: localhost:5436
+      negotiation-type: TLS
+      security:
+        trust-cert-collection: classpath:certs/grpc/server-auction-cert-example.pem  # заменить на реальный cert
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8086/.well-known/jwks.json # замените на ваш path to pub key
+  datasource:
+    url: jdbc:postgresql://localhost:5432/your_db_name   # заменить на реальную БД
+    username: your_db_user                               # заменить на пользователя
+    password: your_db_password                           # заменить на пароль
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+

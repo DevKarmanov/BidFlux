@@ -1,0 +1,316 @@
+openapi: 3.0.3
+info:
+  title: Auth API
+  version: 1.0.0
+paths:
+  /auth/login:
+    post:
+      summary: Логин пользователя
+      description: Аутентификация пользователя с username и password. Возвращает access и refresh токены
+      operationId: login
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Логин пользователя
+        - name: password
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Пароль пользователя
+        - name: X-Device-Id
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Уникальный идентификатор устройства, которому выдается refresh токен
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tokens'
+              examples:
+                example-1:
+                  value:
+                    access_token:
+                      access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      token_type: "Bearer"
+                      expires_at: 600
+                    refresh_token:
+                      jti: "uuid-refresh-token"
+                      issuedAt: "2025-08-01T15:17:20.793Z"
+                      expiresAt: "2025-08-08T15:17:20.793Z"
+                      refreshToken: "refresh-token-string"
+        '400':
+          description: Ошибка валидации запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                example-1:
+                  value:
+                    status: 400
+                    error: Bad Request
+                    message: "Username must not be empty; Password must not be empty"
+                    path: /auth/login
+                    timestamp: "2025-08-30T15:17:20.793Z"
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                Неправильный пароль:
+                  value:
+                    status: 401
+                    error: Unauthorized
+                    message: "Password does not match"
+                    path: /auth/login
+                    timestamp: "2025-08-30T15:17:20.793Z"
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    error: Not Found
+                    message: "User not found"
+                    path: /auth/login
+                    timestamp: "2025-08-30T15:17:20.793Z"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                example-1:
+                  value:
+                    status: 500
+                    error: Internal Server Error
+                    message: "Unexpected error occurred"
+                    path: /auth/login
+                    timestamp: "2025-08-30T15:17:20"
+
+  /auth/registration:
+    post:
+      summary: Регистрация нового пользователя
+      description: Создает нового пользователя с username и password
+      operationId: register
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Логин пользователя
+        - name: password
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Пароль пользователя
+      responses:
+        '200':
+          description: Пользователь успешно зарегистрирован
+        '400':
+          description: Ошибка валидации запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                example-1:
+                  value:
+                    status: 400
+                    error: Bad Request
+                    message: "Username must not be empty; Password must not be empty"
+                    path: /auth/registration
+                    timestamp: "2025-08-30T15:17:20.793Z"
+        '409':
+          description: Сущность уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                example-1:
+                  value:
+                    status: 409
+                    error: Conflict
+                    message: "User already exists"
+                    path: /auth/registration
+                    timestamp: "2025-08-30T15:17:20.793Z"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                example-1:
+                  value:
+                    status: 500
+                    error: Internal Server Error
+                    message: "Unexpected error occurred"
+                    path: /auth/registration
+                    timestamp: "2025-08-30T15:17:20"
+
+  /auth/refresh:
+    post:
+      summary: Обновление access токена
+      description: Возвращает новый access токен на основе refresh токена
+      operationId: refresh
+      parameters:
+        - name: X-Refresh-Token
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Refresh токен
+      responses:
+        '200':
+          description: Новый access токен успешно выдан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+              examples:
+                example-1:
+                  value:
+                    access_token:
+                      access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      token_type: "Bearer"
+                      expires_at: 600
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                Невалидный токен:
+                  value:
+                    status: 401
+                    error: Unauthorized
+                    message: "Invalid refresh token"
+                    path: /auth/refresh
+                    timestamp: "2025-08-30T15:17:20.793Z"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                example-1:
+                  value:
+                    status: 500
+                    error: Internal Server Error
+                    message: "Unexpected error occurred"
+                    path: /auth/refresh
+                    timestamp: "2025-08-30T15:17:20"
+
+  /.well-known/jwks.json:
+    get:
+      summary: Получение JWKS
+      description: Возвращает JWKS JSON для проверки JWT
+      operationId: getJwks
+      responses:
+        '200':
+          description: JWKS успешно получен
+
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: HTTP статус ошибки
+          example: 400
+        error:
+          type: string
+          description: Краткое описание ошибки
+          example: "Bad Request"
+        message:
+          type: string
+          description: Подробное сообщение об ошибке
+          example: "Validation failed: startPrice must be positive"
+        path:
+          type: string
+          description: Путь запроса, на котором произошла ошибка
+          example: "/auction"
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+          example: "2025-08-30T14:40:00Z"
+      required:
+        - status
+        - error
+        - message
+        - path
+        - timestamp
+
+    Tokens:
+      type: object
+      properties:
+        access_token:
+          $ref: '#/components/schemas/AccessToken'
+        refresh_token:
+          $ref: '#/components/schemas/RefreshToken'
+      required:
+        - access_token
+        - refresh_token
+
+    AccessToken:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access токен
+        tokenType:
+          type: string
+          description: Тип токена (обычно Bearer)
+        expiresAt:
+          type: integer
+          description: Время истечения токена в секундах
+      required:
+        - access_token
+        - token_type
+        - expires_at
+
+    RefreshToken:
+      type: object
+      properties:
+        jti:
+          type: string
+          description: Уникальный идентификатор токена
+        issuedAt:
+          type: string
+          format: date-time
+          description: Дата и время выдачи токена
+        expiresAt:
+          type: string
+          format: date-time
+          description: Дата и время истечения токена
+        refreshToken:
+          type: string
+          description: Значение refresh токена
+      required:
+        - jti
+        - issuedAt
+        - expiresAt
+        - refreshToken

@@ -10,6 +10,6 @@ public class AuctionConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new Argon2PasswordEncoder(16,32,1,65536,3);
+        return new Argon2PasswordEncoder(16,32,1,65536,2);
     }
 }

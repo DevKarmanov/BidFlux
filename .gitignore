@@ -7,6 +7,11 @@ application.yaml
 init/init.sql
 docker/.env
 postgres-data/
+*.pem
+*.json
+
+!*-example.pem
+!*-example.json
 
 ### IntelliJ IDEA ###
 .idea/

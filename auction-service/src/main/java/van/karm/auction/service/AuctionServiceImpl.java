@@ -1,11 +1,13 @@
 package van.karm.auction.service;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import van.karm.auction.dto.request.CreateAuction;
 import van.karm.auction.dto.response.AuctionInfo;
 import van.karm.auction.dto.response.CreatedAuction;
@@ -21,19 +23,22 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class AuctionServiceImpl implements AuctionService{
-
+    private final Logger log = LoggerFactory.getLogger(AuctionServiceImpl.class);
     private final AuctionRepo auctionRepo;
     private final PasswordEncoder argon2;
+    private final TransactionTemplate transactionTemplate;
 
-    @Transactional
+
     @Override
     public CreatedAuction createAuction(CreateAuction auctionInfo) {
-        String accessCode = null;
+        String accessCode;
         String accessCodeHash = null;
 
         if (auctionInfo.getIsPrivate()) {
             accessCode = StringGenerator.generateString(64);
             accessCodeHash = argon2.encode(accessCode);
+        } else {
+            accessCode = null;
         }
 
         Auction auction = new Auction(
@@ -42,36 +47,47 @@ public class AuctionServiceImpl implements AuctionService{
                 auctionInfo.getStartPrice(),
                 auctionInfo.getBidIncrement(),
                 auctionInfo.getReservePrice(),
-                auctionInfo.getIsPrivate(),
+                auctionInfo.getIsPrivate(),//todo установить хозяина аукциона
                 accessCodeHash,
-                AuctionStatus.ACTIVE,     //todo брать время окончания аукциона и заплинировать автоматчиескую установку его статутса на FINISHED
+                AuctionStatus.ACTIVE,     //todo брать время окончания аукциона и запланировать автоматическую установку его статуса на FINISHED
                 auctionInfo.getStartDate(),
                 auctionInfo.getEndDate(),
                 auctionInfo.getCurrency()
         );
 
-        auctionRepo.save(auction);
-        return new CreatedAuction(auction.getId(),accessCode);
+        return transactionTemplate.execute(status -> {
+            auctionRepo.save(auction);
+            return new CreatedAuction(auction.getId(), accessCode);
+        });
     }
+
 
     @Override
-    public AuctionInfo getAuctionInfo(@NotNull UUID id, String password) {
-        Auction auction = auctionRepo.findById(id)
-                .orElseThrow(()->new EntityNotFoundException("Auction with id "+id+" not found"));
+    public AuctionInfo getAuctionInfo(Jwt jwt, UUID auctionId, String password) {
+        UUID userId = UUID.fromString(jwt.getClaim("userId"));
 
-        if (auction.isPrivate()) {
-            if (password == null){
-                throw new AccessDeniedException("Password is null");
-            }
-            boolean hasAccess = argon2.matches(password,auction.getAccessCodeHash());
-            if (hasAccess) {
-                return AuctionMapper.toAuctionInfo(auction,true);
-            }else {
-                throw new AccessDeniedException("Auction password does not match");
-            }
-        }else {
-            return AuctionMapper.toAuctionInfo(auction,false);
+        Auction auction = auctionRepo.findById(auctionId)
+                .orElseThrow(() -> new EntityNotFoundException("Auction with id " + auctionId + " not found"));
+
+        boolean isAllowed = !auction.isPrivate() || checkAndGrantAccess(auctionId, userId, password, auction.getAccessCodeHash());
+
+        return AuctionMapper.toAuctionInfo(auction, isAllowed);
+    }
+
+    private boolean checkAndGrantAccess(UUID auctionId, UUID userId, String password, String accessCodeHash) {
+        if (password == null || password.isBlank()) {
+            throw new AccessDeniedException("Password is required for private auction");
         }
 
+        if (!argon2.matches(password.trim(), accessCodeHash)) {
+            throw new AccessDeniedException("Auction password does not match");
+        }
+
+        transactionTemplate.executeWithoutResult(statusTx->auctionRepo.addAllowedUser(auctionId, userId));
+        log.info("User {} added to allowed users list", userId);
+
+        return true;
     }
+
+
 }

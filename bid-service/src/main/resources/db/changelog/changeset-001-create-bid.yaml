@@ -1,0 +1,80 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-bid
+      author: ivan
+      changes:
+        - createTable:
+            tableName: bid
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: numeric(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: auction_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+        - createIndex:
+            indexName: idx_bid_auction_id
+            tableName: bid
+            columns:
+              - column:
+                  name: auction_id
+
+        - createIndex:
+            indexName: idx_bid_user_id
+            tableName: bid
+            columns:
+              - column:
+                  name: user_id
+
+        - createIndex:
+            indexName: idx_bid_auction_amount
+            tableName: bid
+            columns:
+              - column:
+                  name: auction_id
+              - column:
+                  name: amount
+            unique: false
+
+        - addForeignKeyConstraint:
+            constraintName: fk_bid_auction
+            baseTableName: bid
+            baseColumnNames: auction_id
+            referencedTableName: auction
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            constraintName: fk_bid_user
+            baseTableName: bid
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - sql:
+            sql: >
+              ALTER TABLE bid
+              ADD CONSTRAINT chk_bid_amount_nonnegative
+              CHECK (amount >= 0);

@@ -12,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.support.TransactionTemplate;
 import van.karm.auction.dto.request.CreateAuction;
 import van.karm.auction.dto.response.CreatedAuction;
 import van.karm.auction.model.Auction;
@@ -22,6 +23,7 @@ import van.karm.auction.service.AuctionServiceImpl;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,10 +34,13 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 @WebMvcTest(AuctionControllerImpl.class)
 @Import(AuctionServiceImpl.class)
 public class AuctionControllerTest {
+    @MockitoBean
+    private TransactionTemplate transactionTemplate;
 
     @Autowired
     private MockMvc mockMvc;
@@ -51,7 +56,6 @@ public class AuctionControllerTest {
 
     @MockitoBean
     private PasswordEncoder argon2;
-
 
     private CreateAuction validPublicCreateAuctionDto() {
         return new CreateAuction(
@@ -78,6 +82,7 @@ public class AuctionControllerTest {
                 .status(AuctionStatus.ACTIVE)
                 .isPrivate(isPrivate)
                 .startDate(LocalDateTime.now())
+                .allowedUserIds(new HashSet<>())
                 .endDate(LocalDateTime.now().plusDays(1))
                 .currency(CurrencyType.USD)
                 .build();
@@ -85,11 +90,11 @@ public class AuctionControllerTest {
         return auction;
     }
 
-
     private ResultActions postCreateAuction(CreateAuction auction) throws Exception {
         return mockMvc.perform(post("/auction")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(auction)));
+                .content(objectMapper.writeValueAsString(auction))
+                .with(jwt().jwt(jwt -> jwt.claim("userId", UUID.randomUUID().toString()))));
     }
 
     private void postCreateAuctionExpectBadRequest(CreateAuction auction) throws Exception {
@@ -97,11 +102,11 @@ public class AuctionControllerTest {
     }
 
     private ResultActions postGetAuction(UUID id, String password) throws Exception {
-        MockHttpServletRequestBuilder builder = post("/auction/" + id);
+        MockHttpServletRequestBuilder builder = post("/auction/" + id)
+                .with(jwt().jwt(jwt -> jwt.claim("userId", UUID.randomUUID().toString())));
         if (password != null) builder.param("password", password);
         return mockMvc.perform(builder);
     }
-
 
     @Test
     void testCreateAuction_withInvalidFields_shouldReturnBadRequest() throws Exception {
@@ -123,14 +128,13 @@ public class AuctionControllerTest {
         }
     }
 
-
     @Test
-    void testCreateAuction_withValidInfo_shouldReturnOkAndDto() throws Exception {
+    void testCreateAuction_withValidInfo_shouldReturnIsCreatedAndDto() throws Exception {
         CreatedAuction createdAuction = new CreatedAuction(UUID.randomUUID(), "password");
         doReturn(createdAuction).when(auctionService).createAuction(any(CreateAuction.class));
 
         postCreateAuction(validPublicCreateAuctionDto())
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.password").exists());
     }
@@ -161,12 +165,12 @@ public class AuctionControllerTest {
     }
 
     @Test
-    void testGetAuctionInfo_withNonExistingId_shouldReturnBadRequest() throws Exception {
+    void testGetAuctionInfo_withNonExistingId_shouldReturnNotFound() throws Exception {
         UUID id = UUID.randomUUID();
         when(auctionRepo.findById(id)).thenReturn(Optional.empty());
 
-        postGetAuction(id, null).andExpect(status().isBadRequest());
-        postGetAuction(id, "password").andExpect(status().isBadRequest());
+        postGetAuction(id, null).andExpect(status().isNotFound());
+        postGetAuction(id, "password").andExpect(status().isNotFound());
     }
 }
 

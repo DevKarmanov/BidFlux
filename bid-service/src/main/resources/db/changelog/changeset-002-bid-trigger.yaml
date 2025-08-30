@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-bid-trigger
+      author: ivan
+      changes:
+        - sqlFile:
+            path: db/changelog/bid-trigger.sql
+            splitStatements: false
+            stripComments: true

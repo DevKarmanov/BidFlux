@@ -1,0 +1,25 @@
+syntax="proto3";
+
+option java_multiple_files = true; //Разделять скоимплированные джава классы
+option java_package = "van.karm.auction"; //Package для сгенерированных классов (обычно соответствующий структуре модуля)
+option java_outer_classname = "AuctionServiceMessages"; //Это имя "оболочки" (outer class) для всех сгенерированных классов
+
+service AuctionService {
+  rpc ValidateBid(ValidateBidRequest) returns (ValidateBidResponse);
+}
+
+message ValidateBidRequest {
+  string userId = 1;
+  string auctionId = 2;
+  Money amount = 3;
+}
+
+message ValidateBidResponse {
+  bool valid = 1;
+  string errorMessage = 2;
+}
+
+message Money {
+  int64 units = 1;
+  int32 scale = 2;
+}

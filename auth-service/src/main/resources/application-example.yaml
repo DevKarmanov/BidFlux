@@ -1,0 +1,39 @@
+server:
+  port: 8083
+
+auth:
+  jwt:
+    issuer: "auth-service"
+    audience: "auction-service,bid-service"
+    access-ttl-min: 5      # не забудьте изменить под свои нужды
+    refresh-ttl-days: 7
+    private-key-path: /certs/jwt/private_jwt_key-example.pem  # замените на реальный путь
+    public-key-path: /certs/jwt/public_jwt_key-example.pem    # замените на реальный путь
+
+grpc:
+  server:
+    port: 5435
+    security:
+      enabled: true
+      certificate-chain: classpath:certs/grpc/server-auth-cert-example.pem  # замените на ваш cert
+      private-key: classpath:certs/grpc/server-auth-key-example.pem         # замените на ваш key
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/your_db_name    # имя БД
+    username: your_db_user                                # пользователь БД
+    password: your_db_password                            # пароль БД
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  main:
+    banner-mode: off
+
+springdoc:
+  swagger-ui:
+    url: /openapi.yaml
