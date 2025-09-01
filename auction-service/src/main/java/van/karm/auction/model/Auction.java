@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Check;
 
 import java.math.BigDecimal;
@@ -80,6 +81,7 @@ public class Auction {
             foreignKey = @ForeignKey(name = "fk_auction_allowed_users_auction")
     )
     @Column(name = "user_id", nullable = false)
+    @BatchSize(size = 20)
     private Set<UUID> allowedUserIds = new HashSet<>();
 
 

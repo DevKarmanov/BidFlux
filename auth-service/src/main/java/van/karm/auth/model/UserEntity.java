@@ -2,6 +2,7 @@ package van.karm.auth.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -50,5 +51,6 @@ public class UserEntity {
                     @Index(name = "idx_users_roles_role_id", columnList = "role_id")
             }
     )
+    @BatchSize(size = 20)
     private Set<Role> roles;
 }
