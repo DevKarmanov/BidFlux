@@ -8,8 +8,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
-import van.karm.auction.presentation.handler.RestAccessDeniedHandler;
-import van.karm.auction.presentation.handler.RestAuthenticationEntryPoint;
+import van.karm.auction.presentation.exception.handler.RestAccessDeniedHandler;
+import van.karm.auction.presentation.exception.handler.RestAuthenticationEntryPoint;
 
 @RequiredArgsConstructor
 @Configuration
