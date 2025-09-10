@@ -1,0 +1,17 @@
+syntax="proto3";
+
+option java_multiple_files = true;
+option java_package = "van.karm.user";
+option java_outer_classname = "UserServiceMessages";
+
+service UserService {
+  rpc GetUsernameByUserId(UserId) returns (Username);
+}
+
+message UserId{
+  string userId = 1;
+}
+
+message Username{
+  string username = 1;
+}

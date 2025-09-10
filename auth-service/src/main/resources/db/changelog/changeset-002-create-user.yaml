@@ -56,6 +56,12 @@ databaseChangeLog:
             constraintName: fk_users_roles_role
             onDelete: CASCADE
         - createIndex:
+            indexName: idx_users_names
+            tableName: users
+            columns:
+              - column:
+                  name: username
+        - createIndex:
             indexName: idx_users_roles_user_id
             tableName: users_roles
             columns:

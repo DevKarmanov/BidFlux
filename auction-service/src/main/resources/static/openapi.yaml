@@ -2,9 +2,27 @@ openapi: 3.0.3
 info:
   title: Auction API
   version: 1.0.0
+  description: |
+    Auction API предоставляет функционал для создания и управления аукционами. 
+    Возможности:
+    - Создание публичных и приватных аукционов
+    - Получение информации о конкретных аукционах
+    
+    Все эндпоинты требуют заголовок `Authorization: Bearer <token>`, 
+    за исключением случаев, когда явно указано иное.
+
+tags:
+  - name: Auctions
+    description: Методы для работы с аукционами (создание, получение информации)
+
+security:
+  - bearerAuth: []
+
 paths:
   /auction:
     post:
+      tags:
+        - Auctions
       summary: Создать новый аукцион
       description: Создаёт новый аукцион с указанной информацией. Все поля обязательны, кроме тех, что явно указаны как необязательные.
       operationId: createAuction
@@ -16,7 +34,7 @@ paths:
               $ref: '#/components/schemas/CreateAuction'
       responses:
         '200':
-          description: Генерирует пароль при необходимости
+          description: Успешное создание аукциона
           content:
             application/json:
               schema:
@@ -56,41 +74,23 @@ paths:
                     path: "/auction"
                     timestamp: "2025-08-30T14:30:01Z"
         '401':
-          description: Неавторизованный пользователь
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-              example:
-                status: 401
-                error: "Unauthorized"
-                message: "JWT token is missing or invalid"
-                path: "/auction"
-                timestamp: "2025-08-30T14:35:01Z"
+          $ref: '#/components/responses/UnauthorizedError'
         '500':
-          description: Внутренняя ошибка сервера
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-              example:
-                status: 500
-                error: "Server error"
-                message: "NullPointerException at AuctionService.createAuction"
-                path: "/auction"
-                timestamp: "2025-08-30T14:30:05Z"
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          description: Bearer accessToken для аутентификации пользователя
+          $ref: '#/components/responses/InternalServerError'
 
   /auction/{id}:
     post:
+      tags:
+        - Auctions
       summary: Получить информацию о конкретном аукционе
-      description: Возвращает детальную информацию о выбранном аукционе. Если аукцион приватный, необходимо передать пароль.
+      description: |
+        Возвращает детальную информацию о выбранном аукционе.  
+        Можно запросить только необходимые поля, указав их в параметре **fields**.  
+        
+        - Если `fields` не передан, по умолчанию возвращаются поля:  
+          `currency, startDate, startPrice, description, bidIncrement, reservePrice, status, endDate, isPrivate, title, id`.  
+        - Чтобы получить дополнительные поля (`allowedUsersCount`, `ownerName`), их нужно явно указать в `fields`.  
+        - Поле **allowedUsersCount** доступно только для приватных аукционов и показывает количество пользователей, допущенных к аукциону.
       operationId: auctionInfo
       parameters:
         - name: id
@@ -106,19 +106,81 @@ paths:
           required: false
           schema:
             type: string
-        - name: Authorization
-          in: header
-          required: true
+        - name: fields
+          in: query
+          description: |
+            Список полей, которые необходимо вернуть.  
+            Возможные значения:  
+            `currency, startDate, startPrice, description, bidIncrement, reservePrice, status, endDate, isPrivate, title, id, allowedUsersCount, owner_name`
+          required: false
           schema:
-            type: string
-          description: Bearer accessToken для аутентификации пользователя
+            type: array
+            items:
+              type: string
+              enum:
+                - currency
+                - startDate
+                - startPrice
+                - description
+                - bidIncrement
+                - reservePrice
+                - status
+                - endDate
+                - isPrivate
+                - title
+                - id
+                - allowedUsersCount
+                - owner_name
       responses:
         '200':
-          description: Детальная информация о выбранном аукционе
+          description: Успешный ответ с динамическим набором полей
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuctionInfo'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+              examples:
+                default:
+                  summary: Ответ по умолчанию (если fields не передан)
+                  value:
+                    data:
+                      currency: "BYN"
+                      startDate: "2027-01-15T23:02:20"
+                      startPrice: 0.0000
+                      description: "dFqjjvMSPltGEKccDevaovyuMOSsOy"
+                      bidIncrement: 0.1000
+                      reservePrice: 0.1000
+                      status: "ACTIVE"
+                      endDate: "2028-07-07T19:21:33"
+                      isPrivate: false
+                      title: "yEpyzMKowD"
+                      id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
+                minimal:
+                  summary: Только id и owner_name
+                  value:
+                    data:
+                      id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
+                      owner_name: "venik"
+                full:
+                  summary: Все поля включая allowedUsersCount (для приватного аукциона)
+                  value:
+                    data:
+                      id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
+                      title: "Закрытый аукцион"
+                      description: "Только для приглашённых"
+                      startPrice: 100.00
+                      bidIncrement: 10.00
+                      reservePrice: 200.00
+                      isPrivate: true
+                      status: "ACTIVE"
+                      startDate: "2025-09-10T10:00:00"
+                      endDate: "2025-09-15T18:00:00"
+                      currency: "USD"
+                      allowedUsersCount: 15
+                      owner_name: "admin"
         '404':
           description: Сущность не найдена
           content:
@@ -132,17 +194,7 @@ paths:
                 path: "/auction/123e4567-e89b-12d3-a456-426614174000"
                 timestamp: "2025-08-30T14:30:02Z"
         '401':
-          description: Неавторизованный пользователь
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-              example:
-                status: 401
-                error: "Unauthorized"
-                message: "JWT token is missing or invalid"
-                path: "/auction"
-                timestamp: "2025-08-30T14:35:01Z"
+          $ref: '#/components/responses/UnauthorizedError'
         '403':
           description: Доступ запрещён
           content:
@@ -167,20 +219,41 @@ paths:
                     path: "/auction/123e4567-e89b-12d3-a456-426614174000"
                     timestamp: "2025-08-30T14:30:04Z"
         '500':
-          description: Внутренняя ошибка сервера
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-              example:
-                status: 500
-                error: "Server error"
-                message: "NullPointerException at AuctionService.getAuction"
-                path: "/auction/123e4567-e89b-12d3-a456-426614174000"
-                timestamp: "2025-08-30T14:30:05Z"
-
+          $ref: '#/components/responses/InternalServerError'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    UnauthorizedError:
+      description: Неавторизованный пользователь
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            status: 401
+            error: "Unauthorized"
+            message: "JWT token is missing or invalid"
+            path: "/auction"
+            timestamp: "2025-08-30T14:35:01Z"
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            status: 500
+            error: "Server error"
+            message: "Unexpected exception"
+            path: "/auction"
+            timestamp: "2025-08-30T14:30:05Z"
+
   schemas:
     ApiError:
       type: object
@@ -305,6 +378,12 @@ components:
           description: Резервная цена аукциона
           type: number
           format: float
+        ownerName:
+          description: Имя создателя аукциона
+          type: string
+        allowedUsersCount:
+          description: Количество участников для приватных аукционов
+          type: integer
         isPrivate:
           description: Флаг приватного аукциона
           type: boolean
@@ -338,4 +417,3 @@ components:
         - startDate
         - endDate
         - currency
-

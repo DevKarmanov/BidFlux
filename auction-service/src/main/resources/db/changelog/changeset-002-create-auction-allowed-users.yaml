@@ -33,11 +33,7 @@ databaseChangeLog:
             constraintName: fk_auction_allowed_users_user
             onDelete: CASCADE
 
-        - createIndex:
-            indexName: idx_auction_allowed_users_auction_user
+        - addUniqueConstraint:
             tableName: auction_allowed_users
-            columns:
-              - column:
-                  name: auction_id
-              - column:
-                  name: user_id
+            columnNames: auction_id, user_id
+            constraintName: uq_auction_allowed_users
