@@ -33,18 +33,4 @@ public class RefreshTokenEntity {
     @Column(nullable = false)
     private boolean revoked = false;
 
-    public RefreshTokenEntity(String jti,
-                              UserEntity user,
-                              LocalDateTime issuedAt,
-                              LocalDateTime expiresAt,
-                              String deviceId,
-                              boolean revoked) {
-        this.jti = jti;
-        this.user = user;
-        this.issuedAt = issuedAt;
-        this.expiresAt = expiresAt;
-        this.deviceId = deviceId;
-        this.revoked = revoked;
-    }
-
 }
