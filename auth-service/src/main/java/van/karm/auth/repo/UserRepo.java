@@ -44,4 +44,7 @@ ON CONFLICT (LOWER(username)) DO NOTHING
     ON CONFLICT (user_id, role_id) DO NOTHING
     """, nativeQuery = true)
     void insertUserRoleByName(@Param("userId") UUID userId, @Param("roleName") String roleName);
+
+    @Query(value = "SELECT u.username FROM UserEntity u WHERE u.id = :id")
+    Optional<String> findUsernameById(UUID id);
 }

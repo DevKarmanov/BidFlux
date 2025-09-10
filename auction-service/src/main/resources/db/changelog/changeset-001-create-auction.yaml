@@ -61,6 +61,11 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
+                  name: owner_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
                   name: currency
                   type: varchar(3)
                   constraints:
@@ -88,6 +93,14 @@ databaseChangeLog:
             columns:
               - column:
                   name: start_date
+
+        - addForeignKeyConstraint:
+            constraintName: fk_auction_user
+            baseTableName: auction
+            baseColumnNames: owner_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: SET NULL
 
         - sql:
             sql: >
