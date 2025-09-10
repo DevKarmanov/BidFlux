@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import van.karm.auction.domain.exception.AccessDeniedException;
+import van.karm.auction.presentation.exception.AccessDeniedException;
 import van.karm.auction.domain.repo.AuctionRepo;
 import van.karm.auction.infrastructure.security.decode.Decoder;
 

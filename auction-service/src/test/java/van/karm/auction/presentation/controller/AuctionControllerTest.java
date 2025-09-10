@@ -17,9 +17,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import van.karm.auction.domain.exception.AccessDeniedException;
+import van.karm.auction.presentation.exception.AccessDeniedException;
 import van.karm.auction.domain.model.CurrencyType;
-import van.karm.auction.domain.service.AuctionService;
+import van.karm.auction.application.service.AuctionService;
 import van.karm.auction.presentation.dto.request.CreateAuction;
 import van.karm.auction.presentation.dto.response.CreatedAuction;
 import van.karm.auction.presentation.dto.response.DynamicResponse;

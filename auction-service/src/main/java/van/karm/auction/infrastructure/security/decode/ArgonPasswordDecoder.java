@@ -3,7 +3,7 @@ package van.karm.auction.infrastructure.security.decode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import van.karm.auction.domain.exception.AccessDeniedException;
+import van.karm.auction.presentation.exception.AccessDeniedException;
 
 @RequiredArgsConstructor
 @Component

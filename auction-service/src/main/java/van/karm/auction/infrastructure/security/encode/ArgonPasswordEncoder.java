@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import van.karm.auction.domain.dto.AccessAndHashCodes;
-import van.karm.auction.utils.StringGenerator;
+import van.karm.auction.common.utils.StringGenerator;
 
 @RequiredArgsConstructor
 @Component

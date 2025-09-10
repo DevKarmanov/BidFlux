@@ -8,13 +8,19 @@ grpc:
       enabled: true
       certificate-chain: classpath:certs/grpc/server-auction-cert-example.pem # замените на ваш cert
       private-key: classpath:certs/grpc/server-auction-key-example.pem        # замените на ваш key
+  client:
+    user-service:
+      address: localhost:5435
+      negotiation-type: TLS
+      security:
+        trust-cert-collection: classpath:certs/grpc/server-auth-cert-example.pem # замените на ваш
 
 spring:
   security:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:8086/.well-known/jwks.json # замените на ваш path to pub key
+          jwk-set-uri: http://localhost:8083/.well-known/jwks.json # замените на ваш path to pub key
   datasource:
     url: jdbc:postgresql://localhost:5432/your_db_name                  # имя БД
     username: your_db_user                                              # пользователь БД
