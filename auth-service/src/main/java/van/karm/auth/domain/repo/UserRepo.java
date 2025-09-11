@@ -12,17 +12,19 @@ import java.util.Set;
 import java.util.UUID;
 
 public interface UserRepo extends JpaRepository<UserEntity, Long> {
-    Optional<UserEntity> findByUsernameIgnoreCase(String username);
+    @Query("SELECT u FROM UserEntity u LEFT JOIN FETCH u.roles WHERE u.username = :username")
+    Optional<UserEntity> findByUsernameIgnoreCaseWithRoles(@Param("username") String username);
 
     Optional<UserIdAndPasswordData> findProjectionByUsernameIgnoreCase(String username);
 
     @Query("""
-        SELECT r.name
-        FROM UserEntity u
-        JOIN u.roles r
-        WHERE u.username = :username
+    SELECT r.name
+    FROM UserEntity u
+    JOIN u.roles r
+    WHERE u.username = :username
     """)
     Set<String> findRoleNamesByUsername(@Param("username") String username);
+
 
     @Modifying
     @Query(value = """

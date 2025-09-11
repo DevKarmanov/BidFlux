@@ -1,8 +1,9 @@
 package van.karm.auth.application.service.user;
 
-import van.karm.auth.presentation.dto.response.token.Tokens;
+import van.karm.auth.presentation.dto.response.DynamicResponse;
+
+import java.util.Set;
 
 public interface UserService {
-    Tokens login(String username, String password, String deviceId);
-    void register(String username, String password);
+    DynamicResponse getUser(String username, Set<String> fields);
 }
