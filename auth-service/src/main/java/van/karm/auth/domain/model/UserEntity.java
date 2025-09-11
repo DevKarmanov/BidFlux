@@ -38,6 +38,7 @@ public class UserEntity {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<RefreshTokenEntity> refreshTokenEntities = new HashSet<>();
 
