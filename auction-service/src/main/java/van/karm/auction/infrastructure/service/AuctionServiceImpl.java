@@ -4,17 +4,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import van.karm.auction.domain.factory.AuctionBuilder;
-import van.karm.auction.domain.repo.AuctionRepo;
 import van.karm.auction.application.service.AuctionService;
+import van.karm.auction.domain.factory.AuctionBuilder;
+import van.karm.auction.domain.model.Auction;
+import van.karm.auction.domain.repo.AuctionRepo;
 import van.karm.auction.infrastructure.enricher.AuctionFieldEnricher;
-import van.karm.auction.infrastructure.query.QueryExecutor;
 import van.karm.auction.infrastructure.sanitizer.AuctionFieldSanitizer;
 import van.karm.auction.infrastructure.security.encode.Encoder;
 import van.karm.auction.infrastructure.validator.AuctionValidator;
 import van.karm.auction.presentation.dto.request.CreateAuction;
 import van.karm.auction.presentation.dto.response.CreatedAuction;
 import van.karm.auction.presentation.dto.response.DynamicResponse;
+import van.karm.shared.application.provider.AllowedFieldsProvider;
+import van.karm.shared.infrastructure.query.QueryExecutor;
+import van.karm.shared.application.rule.FieldRule;
 
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +33,8 @@ public class AuctionServiceImpl implements AuctionService {
     private final AuctionFieldEnricher auctionFieldEnricher;
     private final AuctionFieldSanitizer sanitizer;
     private final AuctionValidator auctionValidator;
+    private final AllowedFieldsProvider allowedFieldsProvider;
+    private final FieldRule fieldRule;
 
     @Override
     public CreatedAuction createAuction(Jwt jwt, CreateAuction auctionInfo) { //todo аукционы сами не удаляются и не удаляются когда аккаунт владельца стирается, нужно придумать механизм стирания всех бесполезных аукционов (созданых по приколу) и не трогать какие-то важные завершившиеся
@@ -54,13 +59,13 @@ public class AuctionServiceImpl implements AuctionService {
         }
 
         UUID userId = UUID.fromString(jwt.getClaim("userId"));
+        Map<String, Object> fieldsMap = queryExecutor.selectQueryByField(Auction.class,"id",auctionId,fields,allowedFieldsProvider,fieldRule);
 
-        Map<String, Object> fieldsMap = queryExecutor.selectQueryById(auctionId, fields);
         Boolean isPrivate = (Boolean) fieldsMap.get("isPrivate");
         String accessCodeHash = (String) fieldsMap.get("accessCodeHash");
 
-        auctionValidator.validate(password,isPrivate,auctionId,userId,accessCodeHash);
         auctionFieldEnricher.enrich(fieldsMap,isPrivate,fields,auctionId);
+        auctionValidator.validate(password,isPrivate,auctionId,userId,accessCodeHash);
         sanitizer.sanitize(fieldsMap,fields);
 
         return new DynamicResponse(fieldsMap);

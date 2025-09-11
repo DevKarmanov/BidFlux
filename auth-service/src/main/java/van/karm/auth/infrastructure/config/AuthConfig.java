@@ -15,18 +15,18 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import van.karm.auth.presentation.exception.handler.RestAccessDeniedHandler;
-import van.karm.auth.presentation.exception.handler.RestAuthenticationEntryPoint;
+import van.karm.auth.application.service.jwt.JwtAuthenticationService;
 import van.karm.auth.infrastructure.config.props.JwtProperties;
 import van.karm.auth.infrastructure.service.jwt.filter.JwtAuthFilter;
-import van.karm.auth.infrastructure.service.jwt.auth.JwtAuthenticationServiceImpl;
+import van.karm.auth.presentation.exception.handler.RestAccessDeniedHandler;
+import van.karm.auth.presentation.exception.handler.RestAuthenticationEntryPoint;
 
 @EnableConfigurationProperties(JwtProperties.class)
 @RequiredArgsConstructor
 @Configuration
 public class AuthConfig {
     private final JwtAuthFilter jwtAuthFilter;
-    private final JwtAuthenticationServiceImpl jwtAuthenticationService;
+    private final JwtAuthenticationService jwtAuthenticationService;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
     private static final String[] SWAGGER_WHITELIST = {
