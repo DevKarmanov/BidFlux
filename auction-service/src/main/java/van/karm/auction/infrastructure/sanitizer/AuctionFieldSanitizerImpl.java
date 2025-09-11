@@ -16,7 +16,7 @@ public class AuctionFieldSanitizerImpl implements AuctionFieldSanitizer {
                         (requestedFieldsNotEmpty && key.equals("isPrivate") && !requestedFields.contains("isPrivate"))
         );
 
-        if (requestedFieldsNotEmpty && requestedFields.contains("owner_name")) {
+        if (requestedFieldsNotEmpty && requestedFields.contains("ownerName")) {
             fieldsMap.remove("ownerId");
         }
     }

@@ -5,7 +5,7 @@ import io.grpc.StatusRuntimeException;
 import jakarta.persistence.EntityNotFoundException;
 import van.karm.auction.domain.exception.InvalidArgumentException;
 import van.karm.auction.domain.exception.ServiceUnavailableException;
-import van.karm.auction.domain.exception.UnauthenticatedException;
+import van.karm.auction.presentation.exception.UnauthenticatedException;
 
 public class GrpcExceptionHandler {
 

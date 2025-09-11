@@ -53,6 +53,11 @@ openssl genrsa -out auction-service/src/main/resources/certs/grpc/server-auction
 openssl req -new -x509 -key auction-service/src/main/resources/certs/grpc/server-auction-key.pem -out auction-service/src/main/resources/certs/grpc/server-auction-cert.pem -days 365
 ```
 
+Копируем сертификат из `auth-service`:
+```bash
+cp auth-service/src/main/resources/certs/grpc/server-auth-cert.pem auction-service/src/main/resources/certs/grpc/
+```
+
 **bid-service**
 
 Копируем сертификат из `auction-service`:

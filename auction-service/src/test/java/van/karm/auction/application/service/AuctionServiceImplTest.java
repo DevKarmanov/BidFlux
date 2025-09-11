@@ -10,15 +10,20 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.support.TransactionTemplate;
 import van.karm.auction.domain.dto.AccessAndHashCodes;
-import van.karm.auction.domain.exception.AccessDeniedException;
+import van.karm.auction.domain.model.Auction;
 import van.karm.auction.domain.model.CurrencyType;
 import van.karm.auction.infrastructure.enricher.AuctionFieldEnricher;
-import van.karm.auction.infrastructure.query.QueryExecutor;
+import van.karm.auction.infrastructure.provider.AuctionAllowedFieldsProvider;
 import van.karm.auction.infrastructure.sanitizer.AuctionFieldSanitizerImpl;
 import van.karm.auction.infrastructure.security.encode.Encoder;
+import van.karm.auction.infrastructure.service.AuctionServiceImpl;
 import van.karm.auction.infrastructure.validator.AuctionValidator;
 import van.karm.auction.presentation.dto.request.CreateAuction;
 import van.karm.auction.presentation.dto.response.CreatedAuction;
+import van.karm.auction.presentation.exception.AccessDeniedException;
+import van.karm.shared.application.provider.AllowedFieldsProvider;
+import van.karm.shared.infrastructure.query.QueryExecutor;
+import van.karm.shared.application.rule.FieldRule;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,12 +38,14 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuctionServiceImplTest {
-    
+
     @Mock private TransactionTemplate transactionTemplate;
     @Mock private QueryExecutor queryExecutor;
     @Mock private Encoder encoder;
     @Mock private AuctionFieldEnricher auctionFieldEnricher;
-    @Spy  private AuctionFieldSanitizerImpl sanitizer = new AuctionFieldSanitizerImpl();
+    @Spy private final AuctionFieldSanitizerImpl sanitizer = new AuctionFieldSanitizerImpl();
+    @Spy private AllowedFieldsProvider allowedFieldsProvider = new AuctionAllowedFieldsProvider();
+    @Mock private FieldRule fieldRule;
     @Mock private AuctionValidator auctionValidator;
 
     @InjectMocks
@@ -123,7 +130,14 @@ class AuctionServiceImplTest {
 
         when(jwt.hasClaim("userId")).thenReturn(true);
         when(jwt.getClaim("userId")).thenReturn(userId.toString());
-        when(queryExecutor.selectQueryById(auctionId, fields)).thenReturn(fieldsMap);
+        when(queryExecutor.selectQueryByField(
+                eq(Auction.class),
+                eq("id"),
+                eq(auctionId),
+                eq(fields),
+                eq(allowedFieldsProvider),
+                any(FieldRule.class)
+        )).thenReturn(fieldsMap);
 
         var response = auctionService.getAuctionInfo(jwt, auctionId, null, fields);
 
@@ -147,7 +161,14 @@ class AuctionServiceImplTest {
         when(jwt.hasClaim("userId")).thenReturn(true);
         when(jwt.getClaim("userId")).thenReturn(userId.toString());
 
-        when(queryExecutor.selectQueryById(auctionId, fields)).thenReturn(fieldsMap);
+        when(queryExecutor.selectQueryByField(
+                eq(Auction.class),
+                eq("id"),
+                eq(auctionId),
+                eq(fields),
+                eq(allowedFieldsProvider),
+                any(FieldRule.class)
+        )).thenReturn(fieldsMap);
         doThrow(new AccessDeniedException("A password must be provided for a private auction"))
                 .when(auctionValidator).validate(null, true, auctionId, userId, "hashed");
 
@@ -171,7 +192,14 @@ class AuctionServiceImplTest {
         when(jwt.hasClaim("userId")).thenReturn(true);
         when(jwt.getClaim("userId")).thenReturn(userId.toString());
 
-        when(queryExecutor.selectQueryById(auctionId, fields)).thenReturn(fieldsMap);
+        when(queryExecutor.selectQueryByField(
+                eq(Auction.class),
+                eq("id"),
+                eq(auctionId),
+                eq(fields),
+                eq(allowedFieldsProvider),
+                any(FieldRule.class)
+        )).thenReturn(fieldsMap);
         doThrow(new AccessDeniedException("Invalid password"))
                 .when(auctionValidator).validate("wrong", true, auctionId, userId, "hashed");
 
@@ -195,7 +223,14 @@ class AuctionServiceImplTest {
         when(jwt.hasClaim("userId")).thenReturn(true);
         when(jwt.getClaim("userId")).thenReturn(userId.toString());
 
-        when(queryExecutor.selectQueryById(auctionId, fields)).thenReturn(fieldsMap);
+        when(queryExecutor.selectQueryByField(
+                eq(Auction.class),
+                eq("id"),
+                eq(auctionId),
+                eq(fields),
+                eq(allowedFieldsProvider),
+                any(FieldRule.class)
+        )).thenReturn(fieldsMap);
 
         // Валидатор не выбрасывает исключение
         doNothing().when(auctionValidator).validate("secret", true, auctionId, userId, "hashed");

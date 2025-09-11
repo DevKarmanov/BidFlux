@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import van.karm.auction.presentation.dto.request.CreateAuction;
 import van.karm.auction.presentation.dto.response.CreatedAuction;
 import van.karm.auction.presentation.dto.response.DynamicResponse;
-import van.karm.auction.domain.service.AuctionService;
+import van.karm.auction.application.service.AuctionService;
 
 import java.util.Set;
 import java.util.UUID;
