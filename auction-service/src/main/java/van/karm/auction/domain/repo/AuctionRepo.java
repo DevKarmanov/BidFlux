@@ -48,4 +48,9 @@ WHERE a.id = :auctionId
     @Query("SELECT COUNT(a) FROM Auction a JOIN a.allowedUserIds u WHERE a.id = :auctionId")
     int countAllowedUsersById(@Param("auctionId") UUID auctionId);
 
+    @Modifying
+    @Query("UPDATE Auction a " +
+            "SET a.status = 'FINISHED' " +
+            "WHERE a.status <> 'FINISHED' AND a.endDate <= CURRENT_TIMESTAMP")
+    int finishExpiredAuctions();
 }

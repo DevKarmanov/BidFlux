@@ -17,7 +17,7 @@ public class AuctionBuilder {
                 auctionInfo.getReservePrice(),
                 auctionInfo.getIsPrivate(),
                 accessCodeHash,
-                AuctionStatus.ACTIVE,     //todo брать время окончания аукциона и запланировать автоматическую установку его статуса на FINISHED
+                AuctionStatus.ACTIVE,
                 auctionInfo.getStartDate(),
                 auctionInfo.getEndDate(),
                 auctionInfo.getCurrency()
