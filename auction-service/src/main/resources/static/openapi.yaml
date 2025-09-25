@@ -33,12 +33,12 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateAuction'
       responses:
-        '200':
-          description: Успешное создание аукциона
+        '201':
+          description: Аукцион успешно создан
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuctionInfo'
+                $ref: '#/components/schemas/CreatedAuction'
               examples:
                 withPassword:
                   summary: Аукцион приватный
@@ -79,7 +79,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
   /auction/{id}:
-    post:
+    get:
       tags:
         - Auctions
       summary: Получить информацию о конкретном аукционе
@@ -90,7 +90,7 @@ paths:
         - Если `fields` не передан, по умолчанию возвращаются поля:  
           `currency, startDate, startPrice, description, bidIncrement, reservePrice, status, endDate, isPrivate, title, id`.  
         - Чтобы получить дополнительные поля (`allowedUsersCount`, `ownerName`), их нужно явно указать в `fields`.  
-        - Поле **allowedUsersCount** доступно только для приватных аукционов и показывает количество пользователей, допущенных к аукциону.
+        - Поле **allowedUsersCount** доступно только для приватных аукционов.
       operationId: auctionInfo
       parameters:
         - name: id
@@ -111,7 +111,7 @@ paths:
           description: |
             Список полей, которые необходимо вернуть.  
             Возможные значения:  
-            `currency, startDate, startPrice, description, bidIncrement, reservePrice, status, endDate, isPrivate, title, id, allowedUsersCount, owner_name`
+            `currency, startDate, startPrice, description, bidIncrement, reservePrice, status, endDate, isPrivate, title, id, allowedUsersCount, ownerName`
           required: false
           schema:
             type: array
@@ -130,7 +130,7 @@ paths:
                 - title
                 - id
                 - allowedUsersCount
-                - owner_name
+                - ownerName
       responses:
         '200':
           description: Успешный ответ с динамическим набором полей
@@ -148,22 +148,22 @@ paths:
                   value:
                     data:
                       currency: "BYN"
-                      startDate: "2027-01-15T23:02:20"
+                      startDate: "2027-01-15T23:02:20Z"
                       startPrice: 0.0000
                       description: "dFqjjvMSPltGEKccDevaovyuMOSsOy"
                       bidIncrement: 0.1000
                       reservePrice: 0.1000
                       status: "ACTIVE"
-                      endDate: "2028-07-07T19:21:33"
+                      endDate: "2028-07-07T19:21:33Z"
                       isPrivate: false
                       title: "yEpyzMKowD"
                       id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
                 minimal:
-                  summary: Только id и owner_name
+                  summary: Только id и ownerName
                   value:
                     data:
                       id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
-                      owner_name: "venik"
+                      ownerName: "venik"
                 full:
                   summary: Все поля включая allowedUsersCount (для приватного аукциона)
                   value:
@@ -176,11 +176,11 @@ paths:
                       reservePrice: 200.00
                       isPrivate: true
                       status: "ACTIVE"
-                      startDate: "2025-09-10T10:00:00"
-                      endDate: "2025-09-15T18:00:00"
+                      startDate: "2025-09-10T10:00:00Z"
+                      endDate: "2025-09-15T18:00:00Z"
                       currency: "USD"
                       allowedUsersCount: 15
-                      owner_name: "admin"
+                      ownerName: "admin"
         '404':
           description: Сущность не найдена
           content:
@@ -210,14 +210,109 @@ paths:
                     message: "Password is required for private auction"
                     path: "/auction/123e4567-e89b-12d3-a456-426614174000"
                     timestamp: "2025-08-30T14:30:03Z"
-                unauthenticated:
-                  summary: Неавторизованный пользователь
+                forbidden:
+                  summary: Пользователь не имеет прав доступа
                   value:
                     status: 403
                     error: "Access denied"
-                    message: "User not authenticated"
+                    message: "User not allowed to access this auction"
                     path: "/auction/123e4567-e89b-12d3-a456-426614174000"
                     timestamp: "2025-08-30T14:30:04Z"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auction/getAll:
+    get:
+      tags:
+        - Auctions
+      summary: Получить список аукционов постранично
+      description: |
+        Возвращает список аукционов с постраничной навигацией.  
+        Можно указать, какие поля включить в ответ через параметр **fields**.  
+
+        Особенности:  
+        1. Если `fields` не указан, то:  
+           - для публичных возвращаются поля:  
+             `bidIncrement, reservePrice, status, endDate, isPrivate, title, id, currency, startDate, startPrice, description`  
+           - для приватных возвращаются поля:  
+             `isPrivate, title, id, currency, startPrice, description`  
+
+        2. Всего можно запросить поля:  
+           `bidIncrement, reservePrice, status, endDate, isPrivate, title, id, currency, startDate, startPrice, description, ownerName, ownerId`  
+
+        3. Для приватных аукционов возвращаются только:  
+           `title, description, startPrice, isPrivate, id, currency`
+      operationId: getAllAuctions
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Номер страницы (начиная с 0)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          description: Размер страницы (количество элементов на странице)
+          schema:
+            type: integer
+            minimum: 1
+            default: 5
+        - name: fields
+          in: query
+          required: false
+          description: Список полей, которые нужно включить в ответ
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - bidIncrement
+                - reservePrice
+                - status
+                - endDate
+                - isPrivate
+                - title
+                - id
+                - currency
+                - startDate
+                - startPrice
+                - description
+                - ownerName
+                - ownerId
+      responses:
+        '200':
+          description: Успешный ответ с постраничным списком аукционов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+              example:
+                data:
+                  - title: "WawzcgSbNm"
+                    description: "JWflKnMwxZYTDtgrumrghmzIPYDihY"
+                    startPrice: 0.0000
+                    isPrivate: false
+                    id: "87912135-68b8-4b72-ba89-5c253d9e5606"
+                    currency: "BYN"
+                    ownerName: "venik"
+                  - title: "WawzcgSbNm"
+                    description: "JWflKnMwxZYTDtgrumrghmzIPYDihY"
+                    startPrice: 0.0000
+                    isPrivate: true
+                    id: "1c2027b0-5964-43ad-ac12-660a2a192452"
+                    currency: "BYN"
+                pageNumber: 0
+                pageSize: 5
+                totalElements: 6
+                totalPages: 2
+                first: true
+                last: false
+                numberOfElements: 5
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -255,30 +350,64 @@ components:
             timestamp: "2025-08-30T14:30:05Z"
 
   schemas:
+    PagedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          description: Список аукционов (набор полей зависит от параметра fields)
+          items:
+            type: object
+            additionalProperties: true
+        pageNumber:
+          type: integer
+          description: Номер текущей страницы
+        pageSize:
+          type: integer
+          description: Размер страницы
+        totalElements:
+          type: integer
+          description: Общее количество элементов
+        totalPages:
+          type: integer
+          description: Общее количество страниц
+        first:
+          type: boolean
+          description: Признак первой страницы
+        last:
+          type: boolean
+          description: Признак последней страницы
+        numberOfElements:
+          type: integer
+          description: Количество элементов на текущей странице
+      required:
+        - data
+        - pageNumber
+        - pageSize
+        - totalElements
+        - totalPages
+        - first
+        - last
+        - numberOfElements
     ApiError:
       type: object
       properties:
         status:
           type: integer
           description: HTTP статус ошибки
-          example: 400
         error:
           type: string
           description: Краткое описание ошибки
-          example: "Bad Request"
         message:
           type: string
           description: Подробное сообщение об ошибке
-          example: "Validation failed: startPrice must be positive"
         path:
           type: string
           description: Путь запроса, на котором произошла ошибка
-          example: "/auction"
         timestamp:
           type: string
           format: date-time
           description: Время возникновения ошибки
-          example: "2025-08-30T14:40:00Z"
       required:
         - status
         - error
@@ -330,12 +459,12 @@ components:
           description: Дата и время начала аукциона, не может быть в прошлом
           type: string
           format: date-time
-          example: "2025-08-30T14:14:02"
+          example: "2025-08-30T14:14:02Z"
         endDate:
           description: Дата и время окончания аукциона, должна быть позже даты начала
           type: string
           format: date-time
-          example: "2025-08-30T16:14:02"
+          example: "2025-08-30T16:14:02Z"
         currency:
           description: Валюта аукциона
           type: string
@@ -352,6 +481,7 @@ components:
           description: Сгенерированный пароль от аукциона. Для публичного аукциона может быть null
           type: string
           format: uuid
+          nullable: true
 
     AuctionInfo:
       type: object
@@ -384,6 +514,7 @@ components:
         allowedUsersCount:
           description: Количество участников для приватных аукционов
           type: integer
+          nullable: true
         isPrivate:
           description: Флаг приватного аукциона
           type: boolean
@@ -395,12 +526,12 @@ components:
           description: Дата и время начала аукциона
           type: string
           format: date-time
-          example: "2025-08-30T14:14:02"
+          example: "2025-08-30T14:14:02Z"
         endDate:
           description: Дата и время окончания аукциона
           type: string
           format: date-time
-          example: "2025-08-30T16:14:02"
+          example: "2025-08-30T16:14:02Z"
         currency:
           description: Валюта аукциона
           type: string

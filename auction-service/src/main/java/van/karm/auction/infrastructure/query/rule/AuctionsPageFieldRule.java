@@ -7,12 +7,12 @@ import van.karm.shared.application.rule.FieldRule;
 import java.util.Set;
 
 @Component
-@Qualifier("auction")
-public class AuctionFieldRule implements FieldRule {
+@Qualifier("auctions")
+public class AuctionsPageFieldRule implements FieldRule {
     @Override
     public void apply(Set<String> filteredRequestedFields, Set<String> originalRequestedFields) {
         filteredRequestedFields.add("isPrivate");
-        filteredRequestedFields.add("accessCodeHash");
+        filteredRequestedFields.add("id");
         if (originalRequestedFields!=null && !originalRequestedFields.isEmpty()) {
             if (originalRequestedFields.contains("ownerName")){
                 filteredRequestedFields.add("ownerId");

@@ -7,8 +7,8 @@ import van.karm.shared.application.provider.AllowedFieldsProvider;
 import java.util.Set;
 
 @Component
-@Qualifier("user")
-public class UserAllowedFieldsProvider implements AllowedFieldsProvider {
+@Qualifier("users")
+public class UserPageAllowedFieldsProvider implements AllowedFieldsProvider {
     private static final Set<String> ALLOWED_USER_FIELDS = Set.of(
             "id", "username"
     );

@@ -2,13 +2,19 @@ openapi: 3.0.3
 info:
   title: Bid API
   version: 1.0.0
+
+security:
+  - bearerAuth: []
+
 paths:
   /bid:
     post:
+      tags:
+        - Bids
       summary: Добавить ставку
       description: >
         Позволяет авторизованному пользователю сделать ставку на конкретный аукцион.
-      
+        
         Важно: если аукцион является приватным, то перед первой ставкой необходимо предварительно обратиться к эндпоинту `/auction/{id}` 
         для получения доступа. Это действие требуется только один раз для каждого приватного аукциона — при последующих ставках повторное обращение не требуется.
         Без предварительного запроса попытка поставить ставку будет отклонена с ошибкой 403.
@@ -19,15 +25,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AddBid'
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          description: Bearer accessToken для аутентификации пользователя
       responses:
-        '200':
+        '201':
           description: Ставка успешно добавлена
           content:
             application/json:
@@ -104,8 +103,181 @@ paths:
                 path: "/bid"
                 timestamp: "2025-08-30T14:40:04Z"
 
+  /bid/getAll/{auctionId}:
+    get:
+      tags:
+        - Bids
+      summary: Получить список ставок для аукциона
+      description: |
+        Возвращает список ставок для указанного аукциона с постраничной навигацией.  
+
+        Особенности:  
+        1. Если `fields` не указан, то возвращаются только:  
+           - `amount`,  
+           - `createdAt`.  
+
+        2. Если аукцион приватный, то предварительно необходимо обратиться к эндпоинту `/auction/{id}` и предоставить пароль.  
+           Это нужно сделать только один раз для конкретного приватного аукциона.  
+           Если доступ не был открыт, то при попытке просмотра ставок вернётся **403 Forbidden**.  
+
+        3. Всего можно запросить поля:  
+           - `id`,  
+           - `amount`,  
+           - `createdAt`,  
+           - `bidOwnerName`.
+      operationId: getAllBidsByAuctionId
+      parameters:
+        - name: auctionId
+          in: path
+          required: true
+          description: Уникальный идентификатор аукциона
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          required: false
+          description: Номер страницы (начиная с 0)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          description: Размер страницы (количество элементов на странице)
+          schema:
+            type: integer
+            minimum: 1
+            default: 5
+        - name: fields
+          in: query
+          required: false
+          description: Список полей, которые нужно включить в ответ
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - id
+                - amount
+                - createdAt
+                - bidOwnerName
+      responses:
+        '200':
+          description: Успешный ответ с постраничным списком ставок
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+              example:
+                data:
+                  - amount: 150.00
+                    createdAt: "2025-09-25T08:30:00Z"
+                    bidOwnerName: "venik"
+                  - amount: 200.00
+                    createdAt: "2025-09-25T08:31:30Z"
+                    bidOwnerName: "alex"
+                pageNumber: 0
+                pageSize: 5
+                totalElements: 2
+                totalPages: 1
+                first: true
+                last: true
+                numberOfElements: 2
+        '401':
+          description: Неавторизованный пользователь
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 401
+                error: "Unauthorized"
+                message: "JWT token is missing or invalid"
+                path: "/bid/getAll/{auctionId}"
+                timestamp: "2025-09-25T08:32:00Z"
+        '403':
+          description: Доступ запрещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                privateAuctionNotUnlocked:
+                  summary: Приватный аукцион не был открыт
+                  value:
+                    status: 403
+                    error: "Bid denied"
+                    message: "You are not allowed to access this resource"
+                    path: "/bid/getAll/4347c5f7-7c47-40df-b8a1-564f900dc001"
+                    timestamp: "2025-09-25T08:32:38Z"
+        '404':
+          description: Аукцион не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 404
+                error: "Entity not found"
+                message: "Auction not found"
+                path: "/bid/getAll/{auctionId}"
+                timestamp: "2025-09-25T08:33:00Z"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
+    PagedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          description: Список аукционов (набор полей зависит от параметра fields)
+          items:
+            type: object
+            additionalProperties: true
+        pageNumber:
+          type: integer
+          description: Номер текущей страницы
+        pageSize:
+          type: integer
+          description: Размер страницы
+        totalElements:
+          type: integer
+          description: Общее количество элементов
+        totalPages:
+          type: integer
+          description: Общее количество страниц
+        first:
+          type: boolean
+          description: Признак первой страницы
+        last:
+          type: boolean
+          description: Признак последней страницы
+        numberOfElements:
+          type: integer
+          description: Количество элементов на текущей странице
+      required:
+        - data
+        - pageNumber
+        - pageSize
+        - totalElements
+        - totalPages
+        - first
+        - last
+        - numberOfElements
     ApiError:
       type: object
       properties:
@@ -150,5 +322,4 @@ components:
         amount:
           description: Сумма ставки, должна быть равна или выше стартовой цены (или выше предыдущей ставки на фиксированный шаг)
           type: number
-          format: float
           minimum: 0.01

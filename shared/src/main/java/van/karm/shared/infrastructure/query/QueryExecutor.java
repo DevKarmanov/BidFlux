@@ -1,5 +1,7 @@
 package van.karm.shared.infrastructure.query;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import van.karm.shared.application.provider.AllowedFieldsProvider;
 import van.karm.shared.application.rule.FieldRule;
 
@@ -13,4 +15,11 @@ public interface QueryExecutor {
                                                 Set<String> requestedFields,
                                                 AllowedFieldsProvider allowedFieldsProvider,
                                                 FieldRule fieldRule);
+
+    <T> Page<Map<String, Object>> selectQueryByFieldPaged(Class<T> entityClass,
+                                                          Map<String, Object> filters,
+                                                          Set<String> requestedFields,
+                                                          AllowedFieldsProvider allowedFieldsProvider,
+                                                          FieldRule fieldRule,
+                                                          Pageable pageable);
 }

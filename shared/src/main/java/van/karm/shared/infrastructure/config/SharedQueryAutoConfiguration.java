@@ -10,6 +10,8 @@ import van.karm.shared.infrastructure.query.builder.JPQLQueryBuilder;
 import van.karm.shared.infrastructure.query.builder.QueryBuilder;
 import van.karm.shared.infrastructure.query.runner.JpaQueryRunner;
 import van.karm.shared.infrastructure.query.runner.QueryRunner;
+import van.karm.shared.infrastructure.query.runner.page.JpaPagedQueryRunner;
+import van.karm.shared.infrastructure.query.runner.page.PagedQueryRunner;
 import van.karm.shared.infrastructure.query.selector.DefaultFieldSelector;
 import van.karm.shared.infrastructure.query.selector.FieldSelector;
 
@@ -34,12 +36,17 @@ public class SharedQueryAutoConfiguration {
         return new JpaQueryRunner(em);
     }
 
+    @Bean
+    @ConditionalOnMissingBean(PagedQueryRunner.class)
+    public PagedQueryRunner pagedQueryRunner(EntityManager em) {return new JpaPagedQueryRunner(em);}
+
 
     @Bean
     @ConditionalOnMissingBean(QueryExecutor.class)
     public QueryExecutor queryExecutor(FieldSelector fieldSelector,
                                        QueryBuilder queryBuilder,
-                                       QueryRunner queryRunner) {
-        return new QueryExecutorImpl(fieldSelector, queryBuilder, queryRunner);
+                                       QueryRunner queryRunner,
+                                       PagedQueryRunner pagedQueryRunner) {
+        return new QueryExecutorImpl(fieldSelector, queryBuilder, queryRunner,pagedQueryRunner);
     }
 }

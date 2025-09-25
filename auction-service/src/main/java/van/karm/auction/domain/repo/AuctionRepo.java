@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import van.karm.auction.domain.model.Auction;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface AuctionRepo extends JpaRepository<Auction, UUID> {
@@ -53,4 +54,17 @@ WHERE a.id = :auctionId
             "SET a.status = 'FINISHED' " +
             "WHERE a.status <> 'FINISHED' AND a.endDate <= CURRENT_TIMESTAMP")
     int finishExpiredAuctions();
+
+    @Query("""
+    SELECT CASE 
+             WHEN a.isPrivate = false THEN true
+             WHEN :userId MEMBER OF a.allowedUserIds THEN true
+             ELSE false 
+           END
+    FROM Auction a
+    WHERE a.id = :auctionId
+""")
+    Optional<Boolean> findAllowed(@Param("auctionId") UUID auctionId,
+                                  @Param("userId") UUID userId);
+
 }
