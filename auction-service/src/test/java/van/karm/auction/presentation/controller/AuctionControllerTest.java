@@ -17,12 +17,12 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import van.karm.auction.presentation.exception.AccessDeniedException;
-import van.karm.auction.domain.model.CurrencyType;
 import van.karm.auction.application.service.AuctionService;
+import van.karm.auction.domain.model.CurrencyType;
 import van.karm.auction.presentation.dto.request.CreateAuction;
 import van.karm.auction.presentation.dto.response.CreatedAuction;
 import van.karm.auction.presentation.dto.response.DynamicResponse;
+import van.karm.auction.presentation.exception.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -75,8 +76,14 @@ class AuctionControllerTest {
                 .content(toJson(body)));
     }
 
-    private ResultActions performPostWithParams(String url, MultiValueMap<String, String> params) throws Exception {
-        MockHttpServletRequestBuilder builder = post(url)
+    private ResultActions performGet(String url) throws Exception {
+        return mockMvc.perform(get(url)
+                .with(withJwt())
+                .contentType(MediaType.APPLICATION_JSON));
+    }
+
+    private ResultActions performGetWithParams(String url, MultiValueMap<String, String> params) throws Exception {
+        MockHttpServletRequestBuilder builder = get(url)
                 .with(withJwt())
                 .contentType(MediaType.APPLICATION_JSON);
 
@@ -122,7 +129,7 @@ class AuctionControllerTest {
         Map<String, Object> data = Map.of("id", UUID.randomUUID(), "title", "Public Auction");
         when(auctionService.getAuctionInfo(any(), any(), any(), any())).thenReturn(new DynamicResponse(data));
 
-        performPost("/auction/" + UUID.randomUUID(),null)
+        performGet("/auction/" + UUID.randomUUID())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.title").value("Public Auction"));
     }
@@ -132,7 +139,7 @@ class AuctionControllerTest {
         when(auctionService.getAuctionInfo(any(), any(), eq(null), any()))
                 .thenThrow(new AccessDeniedException("Password is required"));
 
-        performPost("/auction/" + UUID.randomUUID(),null)
+        performGet("/auction/" + UUID.randomUUID())
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Password is required"));
     }
@@ -143,7 +150,7 @@ class AuctionControllerTest {
         when(auctionService.getAuctionInfo(any(), eq(auctionId), any(), any()))
                 .thenThrow(new EntityNotFoundException("Auction not found"));
 
-        performPost("/auction/" + auctionId,null)
+        performGet("/auction/" + auctionId)
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Auction not found"));
     }
@@ -170,7 +177,7 @@ class AuctionControllerTest {
         params.add("fields", "id");
         params.add("fields", "ownerName");
 
-        performPostWithParams("/auction/" + auctionId, params)
+        performGetWithParams("/auction/" + auctionId, params)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.ownerName").value("Ivan"));
     }
