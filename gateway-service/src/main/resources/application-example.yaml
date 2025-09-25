@@ -31,6 +31,16 @@ spring:
               predicates:
                 - Path=/bid/**
 
+            - id: auction-bids-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/bid/getAll/**
+
+            - id: auction-paged-service
+              uri: http://localhost:8080
+              predicates:
+                - Path=/auction/getAll
+
 server:
   port: 8086
 
