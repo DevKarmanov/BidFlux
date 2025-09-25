@@ -13,6 +13,7 @@ dependencies {
     implementation ("net.devh:grpc-client-spring-boot-starter:${grpcSpringBootVersion}")
     implementation "io.grpc:grpc-netty-shaded:${grpcNettyVersion}"
     implementation project(':contracts')
+    implementation project(':shared')
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11")
     implementation('org.springframework.boot:spring-boot-starter-security')

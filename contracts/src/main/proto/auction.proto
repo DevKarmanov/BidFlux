@@ -6,6 +6,16 @@ option java_outer_classname = "AuctionServiceMessages"; //Это имя "обо�
 
 service AuctionService {
   rpc ValidateBid(ValidateBidRequest) returns (ValidateBidResponse);
+  rpc CheckAllowed(CheckAllowedRequest) returns (CheckAllowedResponse);
+}
+
+message CheckAllowedRequest {
+  string userId = 1;
+  string auctionId = 2;
+}
+
+message CheckAllowedResponse {
+  bool allowed = 1;
 }
 
 message ValidateBidRequest {

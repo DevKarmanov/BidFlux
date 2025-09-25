@@ -4,13 +4,12 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.server.service.GrpcService;
-import van.karm.auction.AuctionServiceGrpc;
-import van.karm.auction.ValidateBidRequest;
-import van.karm.auction.ValidateBidResponse;
+import van.karm.auction.*;
 import van.karm.auction.domain.repo.AuctionRepo;
 import van.karm.auction.infrastructure.mapper.MoneyMapper;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
 @GrpcService
@@ -46,4 +45,27 @@ public class AuctionServiceGrpcImpl extends AuctionServiceGrpc.AuctionServiceImp
         responseObserver.onCompleted();
     }
 
+    @Override
+    public void checkAllowed(CheckAllowedRequest request, StreamObserver<CheckAllowedResponse> responseObserver) {
+        UUID auctionId = UUID.fromString(request.getAuctionId());
+        UUID userId = UUID.fromString(request.getUserId());
+
+        Optional<Boolean> allowedOpt = auctionRepo.findAllowed(auctionId, userId);
+
+        if (allowedOpt.isEmpty()) {
+            responseObserver.onError(
+                    Status.NOT_FOUND
+                            .withDescription("Auction not found: " + auctionId)
+                            .asRuntimeException()
+            );
+            return;
+        }
+
+        CheckAllowedResponse response = CheckAllowedResponse.newBuilder()
+                .setAllowed(allowedOpt.get())
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
 }

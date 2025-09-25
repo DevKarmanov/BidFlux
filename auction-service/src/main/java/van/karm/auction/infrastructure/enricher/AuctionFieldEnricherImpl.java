@@ -1,13 +1,16 @@
 package van.karm.auction.infrastructure.enricher;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import van.karm.auction.domain.repo.AuctionRepo;
 import van.karm.auction.infrastructure.grpc.client.UserClient;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @RequiredArgsConstructor
 @Component
@@ -33,4 +36,41 @@ public class AuctionFieldEnricherImpl implements AuctionFieldEnricher {
             }
         }
     }
+
+    @Override
+    public void enrich(Page<Map<String, Object>> fieldsMap, Set<String> requestedFields) {
+        if (requestedFields == null || requestedFields.isEmpty()) {
+            return;
+        }
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(10)) {
+            List<Future<?>> futures = new ArrayList<>();
+
+            for (Map<String, Object> map : fieldsMap.getContent()) {
+                futures.add(executor.submit(() -> {
+                    Boolean isPrivate = (Boolean) map.get("isPrivate");
+                    UUID auctionId = (UUID) map.get("id");
+                    enrich(map, isPrivate, requestedFields, auctionId);
+                    return null;
+                }));
+            }
+
+            executor.shutdown();
+            checkFuturesForErrors(futures);
+        }
+    }
+
+    private void checkFuturesForErrors(List<Future<?>> futures){
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Thread was interrupted while enriching auction data", e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException("Error while enriching auction data", e.getCause());
+            }
+        }
+    }
+
 }

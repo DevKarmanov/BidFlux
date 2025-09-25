@@ -66,6 +66,10 @@ cp auth-service/src/main/resources/certs/grpc/server-auth-cert.pem auction-servi
 cp auction-service/src/main/resources/certs/grpc/server-auction-cert.pem bid-service/src/main/resources/certs/grpc/
 ```
 
+Копируем сертификат из `auth-service`:
+```bash
+cp auth-service/src/main/resources/certs/grpc/server-auth-cert.pem bid-service/src/main/resources/certs/grpc/
+```
 ---
 
 ### 2. Создание ключей для JWT

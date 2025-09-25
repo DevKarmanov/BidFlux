@@ -8,6 +8,11 @@ grpc:
       negotiation-type: TLS
       security:
         trust-cert-collection: classpath:certs/grpc/server-auction-cert-example.pem  # заменить на реальный cert
+    user-service:
+      address: localhost:5435
+      negotiation-type: TLS
+      security:
+        trust-cert-collection: classpath:certs/grpc/server-auth-cert-example.pem
 
 spring:
   security:
