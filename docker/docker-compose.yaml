@@ -5,8 +5,9 @@ services:
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=bid_flux_db
     ports:
       - "5432:5432"
     volumes:
       - ../postgres-data:/var/lib/postgresql/data
-      - ../init:/docker-entrypoint-initdb.d
+      - ../init/init.sql:/docker-entrypoint-initdb.d/init.sql:ro

@@ -2,7 +2,7 @@ databaseChangeLog:
   - include:
       file: db/changelog/changeset-001-create-role.yaml
   - include:
-      file: db/changelog/changeset-002-create-user.yaml
+      file: db/changelog/changeset-002-add-column-user.yaml
   - include:
       file: db/changelog/changeset-003-create-refresh-token.yaml
   - include:

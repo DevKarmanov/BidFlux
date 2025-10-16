@@ -5,6 +5,7 @@ import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
 import van.karm.auction.AuctionServiceGrpc;
 import van.karm.auction.ValidateBidRequest;
+import van.karm.auction.ValidateBidResponse;
 import van.karm.bid.application.validator.AuctionValidator;
 import van.karm.bid.presentation.dto.request.AddBid;
 import van.karm.bid.infrastructure.converter.MoneyConverter;
@@ -18,7 +19,7 @@ public class AuctionValidatorImpl implements AuctionValidator {
     private AuctionServiceGrpc.AuctionServiceBlockingStub auctionStub;
 
     @Override
-    public boolean isValid(String userId, AddBid bid) {
+    public ValidateBidResponse isValid(String userId, AddBid bid) {
         var request = ValidateBidRequest.newBuilder()
                 .setUserId(userId)
                 .setAuctionId(bid.auctionId().toString())
@@ -26,11 +27,10 @@ public class AuctionValidatorImpl implements AuctionValidator {
                 .build();
 
         try {
-            var response = auctionStub.validateBid(request);
-            return response.getValid();
+            return auctionStub.validateBid(request);
         } catch (StatusRuntimeException e) {
             GrpcExceptionHandler.handleException(e);
-            return false;
+            return null;
         }
     }
 }

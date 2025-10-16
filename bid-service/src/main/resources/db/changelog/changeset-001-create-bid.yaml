@@ -3,36 +3,6 @@ databaseChangeLog:
       id: 001-create-bid
       author: ivan
       changes:
-        - createTable:
-            tableName: bid
-            columns:
-              - column:
-                  name: id
-                  type: uuid
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-              - column:
-                  name: user_id
-                  type: uuid
-                  constraints:
-                    nullable: false
-              - column:
-                  name: amount
-                  type: numeric(19,4)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: created_at
-                  type: timestamp
-                  constraints:
-                    nullable: false
-              - column:
-                  name: auction_id
-                  type: uuid
-                  constraints:
-                    nullable: false
-
         - createIndex:
             indexName: idx_bid_auction_id
             tableName: bid
@@ -55,6 +25,16 @@ databaseChangeLog:
                   name: auction_id
               - column:
                   name: amount
+            unique: false
+
+        - createIndex:
+            indexName: idx_bid_auction_created_desc
+            tableName: bid
+            columns:
+              - column:
+                  name: auction_id
+              - column:
+                  name: created_at
             unique: false
 
         - addForeignKeyConstraint:

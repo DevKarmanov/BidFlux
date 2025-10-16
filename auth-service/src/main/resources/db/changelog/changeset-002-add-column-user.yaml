@@ -1,0 +1,110 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2
+      author: ivan
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_name
+                  type: varchar(255)
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: block_reason
+                  type: text
+                  constraints:
+                    nullable: true
+              - column:
+                  name: deleted
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_online
+                  type: datetime
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: users_roles
+            columns:
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: users_roles
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_users_roles_user
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: users_roles
+            baseColumnNames: role_id
+            referencedTableName: roles
+            referencedColumnNames: id
+            constraintName: fk_users_roles_role
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: users
+            columnNames: username
+            constraintName: uq_users_username
+        - createIndex:
+            indexName: idx_users_roles_user_id
+            tableName: users_roles
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            indexName: idx_users_roles_role_id
+            tableName: users_roles
+            columns:
+              - column:
+                  name: role_id
+        - sql:
+            splitStatements: false
+            stripComments: true
+            sql: |
+              CREATE UNIQUE INDEX ux_users_username_lower ON users (LOWER(username));
+        - sql:
+            splitStatements: false
+            stripComments: true
+            sql: |
+              CREATE INDEX idx_users_inactive_candidates
+              ON users(last_online, enabled)
+              WHERE deleted = false AND enabled = false;
+

@@ -1,0 +1,826 @@
+openapi: 3.0.3
+info:
+  title: Complaint API
+  version: 1.0.0
+  description: API для управления жалобами
+
+tags:
+  - name: Complaint
+    description: Управление жалобами
+  - name: User Complaint
+    description: Управление собственными жалобами пользователя
+  - name: Complaint Archive
+    description: Управление архивными жалобами
+  - name: User Complaint Archive
+    description: Управление собственными архивными жалобами пользователя
+
+security:
+  - bearerAuth: []
+
+paths:
+  /complaint:
+    post:
+      tags:
+        - Complaint
+      summary: Создать новую жалобу
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateComplaintRequest'
+      responses:
+        '200':
+          description: Жалоба успешно создана
+        '400':
+          description: Неверный запрос
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Жалоба уже существует
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - Complaint
+      summary: Получить все жалобы (только для администраторов или модераторов)
+      description: |
+        Доступные поля по умолчанию: id, targetType, targetId, reason, status, createdAt  
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: targetType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ComplaintTargetType'
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [id, targetType, targetId, reason, status, createdAt, authorName, targetName]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /complaint/{complaintId}:
+    get:
+      tags:
+        - Complaint
+      summary: Получить конкретную жалобу по ID (только для администраторов или модераторов)
+      description: |
+        Доступные поля по умолчанию: id, authorId, targetType, targetId, reason, description, status, createdAt
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [id, authorId, targetType, targetId, reason, description, status, createdAt, authorName, targetName]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DynamicResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Жалоба не найдена
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - Complaint
+      summary: Удалить жалобу (только для администраторов)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Жалоба успешно удалена
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Жалоба не найдена
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /complaint/from/{username}:
+    get:
+      tags:
+        - Complaint
+      summary: Получить жалобы от конкретного пользователя (только для администраторов или модераторов)
+      description: |
+        Доступные поля по умолчанию: id, targetType, targetId, reason, status, createdAt
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: targetType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ComplaintTargetType'
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [id, targetType, targetId, reason, status, createdAt, authorName, targetName]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /complaint/about/{targetId}:
+    get:
+      tags:
+        - Complaint
+      summary: Получить жалобы на конкретную цель (только для администраторов или модераторов)
+      description: |
+        Доступные поля по умолчанию: id, targetType, targetId, reason, status, createdAt
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: targetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: targetType
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/ComplaintTargetType'
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [id, targetType, targetId, reason, status, createdAt, authorName, targetName]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /complaint/{complaintId}/resolve:
+    post:
+      tags:
+        - Complaint
+      summary: Разрешить жалобу (только для администраторов или модераторов)
+      description: После разрешения жалобы она попадает в архив
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplaintResolveRequest'
+      responses:
+        '200':
+          description: Жалоба успешно разрешена
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Жалоба не найдена
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/complaint:
+    get:
+      tags:
+        - User Complaint
+      summary: Получить жалобы текущего пользователя
+      description: |
+        Доступные поля по умолчанию: id, targetType, targetId, reason, status, createdAt
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [id, targetType, targetId, reason, status, createdAt, authorName, targetName]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/complaint/{complaintId}:
+    get:
+      tags:
+        - User Complaint
+      summary: Получить конкретную жалобу текущего пользователя
+      description: |
+        Доступные поля по умолчанию: id, authorId, targetType, targetId, reason, description, status, createdAt
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [id, authorId, targetType, targetId, reason, description, status, createdAt, authorName, targetName]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DynamicResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Жалоба не найдена
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /complaint/archive:
+    get:
+      tags:
+        - Complaint Archive
+      summary: Получить все архивные жалобы (только для администраторов или модераторов)
+      description: |
+        Доступные поля по умолчанию: id, targetType, targetId, reason, status, createdAt
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: targetType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ComplaintTargetType'
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [ id, targetType, targetId, reason, status, createdAt, authorName, targetName ]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /complaint/archive/{complaintId}:
+    get:
+      tags:
+        - Complaint Archive
+      summary: Получить конкретную архивную жалобу по ID (только для администраторов или модераторов)
+      description: |
+        Доступные поля по умолчанию: id, authorId, targetType, targetId, reason, description, status, createdAt, resolvedAt, resolvedBy, moderatorComment
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [ id, authorId, targetType, targetId, reason, description, status, createdAt, resolvedAt, resolvedBy, moderatorComment, authorName, targetName ]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DynamicResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Архивная жалоба не найдена
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - Complaint Archive
+      summary: Удалить архивную жалобу (только для администраторов)
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Архивная жалоба успешно удалена
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Архивная жалоба не найдена
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /complaint/archive/from/{username}:
+    get:
+      tags:
+        - Complaint Archive
+      summary: Получить архивные жалобы от конкретного пользователя (только для администраторов или модераторов)
+      description: |
+        Доступные поля по умолчанию: id, targetType, targetId, reason, status, createdAt
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: targetType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ComplaintTargetType'
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [ id, targetType, targetId, reason, status, createdAt, authorName, targetName ]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '400':
+          description: Неверное имя пользователя
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /complaint/archive/about/{targetId}:
+    get:
+      tags:
+        - Complaint Archive
+      summary: Получить архивные жалобы на конкретную цель (только для администраторов или модераторов)
+      description: |
+        Доступные поля по умолчанию: id, targetType, targetId, reason, status, createdAt
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: targetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: targetType
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/ComplaintTargetType'
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [ id, targetType, targetId, reason, status, createdAt, authorName, targetName ]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/complaint/archive:
+    get:
+      tags:
+        - User Complaint Archive
+      summary: Получить архивные жалобы текущего пользователя
+      description: |
+        Доступные поля по умолчанию: id, targetType, targetId, reason, status, createdAt
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: targetType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ComplaintTargetType'
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [ id, targetType, targetId, reason, status, createdAt, authorName, targetName ]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/complaint/archive/{complaintId}:
+    get:
+      tags:
+        - User Complaint Archive
+      summary: Получить конкретную архивную жалобу текущего пользователя
+      description: |
+        Доступные поля по умолчанию: id, authorId, targetType, targetId, reason, description, status, createdAt, resolvedAt, resolvedBy, moderatorComment
+        Дополнительные поля: authorName, targetName
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fields
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum: [ id, authorId, targetType, targetId, reason, description, status, createdAt, resolvedAt, resolvedBy, moderatorComment, authorName, targetName ]
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DynamicResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Архивная жалоба не найдена или нет доступа
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CreateComplaintRequest:
+      type: object
+      required:
+        - targetId
+        - targetType
+        - reason
+      properties:
+        targetId:
+          type: string
+          format: uuid
+          description: ID цели жалобы (пользователя или аукциона)
+        targetType:
+          $ref: '#/components/schemas/ComplaintTargetType'
+        reason:
+          $ref: '#/components/schemas/ComplaintReason'
+        description:
+          type: string
+          description: Описание жалобы (опционально)
+          maxLength: 1000
+
+    ComplaintResolveRequest:
+      type: object
+      required:
+        - action
+        - moderatorComment
+      properties:
+        action:
+          type: string
+          enum: [ACCEPT, REJECT]
+          description: Действие модератора
+        moderatorComment:
+          type: string
+          description: Комментарий модератора
+          minLength: 1
+          maxLength: 500
+
+    DynamicResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+          description: Динамический объект с запрошенными полями
+
+    PagedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+
+    ComplaintTargetType:
+      type: string
+      enum: [USER, AUCTION]
+      description: Тип цели жалобы
+
+    ComplaintReason:
+      type: string
+      enum: [SPAM, SCAM, OFFENSIVE_BEHAVIOR, FRAUD, MISLEADING_INFORMATION, INAPPROPRIATE_CONTENT, POLICY_VIOLATION, PRIVACY_VIOLATION, IMPERSONATION, OTHER]
+      description: Причина жалобы
+
+  responses:
+    Unauthorized:
+      description: Пользователь не авторизован
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+    InternalError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string

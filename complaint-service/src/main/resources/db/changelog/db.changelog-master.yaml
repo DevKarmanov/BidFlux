@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changeset-001-create-complaint.yaml
+  - include:
+      file: db/changelog/changeset-002-create-complaint-archive.yaml

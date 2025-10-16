@@ -1,19 +1,31 @@
--- создаём базу
-CREATE DATABASE bid_flux_db;
+GRANT CONNECT ON DATABASE bid_flux_db TO bidflux_test_user;
 
--- создаём пользователя
-CREATE USER test_user WITH PASSWORD 'example_password';
+CREATE TABLE auction (
+                         id uuid PRIMARY KEY,
+                         owner_id uuid,
+                         status varchar(60) not null
+);
 
--- права на базу (подключение и т.д.)
-GRANT CONNECT ON DATABASE bid_flux_db TO test_user;
+CREATE TABLE bid (
+                     id uuid PRIMARY KEY,
+                     auction_id uuid not null,
+                     user_id uuid not null,
+                     amount numeric(19,4) not null ,
+                     created_at timestamp not null default CURRENT_TIMESTAMP
+);
 
-\c bid_flux_db  -- переключаемся в новую БД
+CREATE TABLE users (
+                       id uuid PRIMARY KEY
+);
 
--- права на таблицу auction: полный доступ
+CREATE TABLE archived_auctions (
+                                   owner_id uuid not null,
+                                   winner_id uuid not null
+);
+
 GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
-      ON TABLE auction TO test_user;
+    ON TABLE auction TO bidflux_test_user;
 
-REVOKE ALL PRIVILEGES ON TABLE bid FROM test_user;
+REVOKE ALL PRIVILEGES ON TABLE bid FROM bidflux_test_user;
 
--- права на таблицу bid: только SELECT и INSERT
-GRANT SELECT, INSERT ON TABLE bid TO test_user;
+GRANT SELECT, INSERT ON TABLE bid TO bidflux_test_user;

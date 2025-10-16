@@ -7,10 +7,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.With;
 import van.karm.auction.domain.model.CurrencyType;
+import van.karm.auction.presentation.validation.ValidAuctionDates;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@ValidAuctionDates
 @AllArgsConstructor
 @Getter
 @With

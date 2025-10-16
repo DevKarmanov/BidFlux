@@ -12,11 +12,11 @@ public class GrpcExceptionHandler {
     public static void handleException(final StatusRuntimeException e) {
         Status.Code code = Status.fromThrowable(e).getCode();
         switch (code) {
-            case UNKNOWN -> throw new RuntimeException(e.getMessage());
-            case NOT_FOUND -> throw new EntityNotFoundException(e.getMessage());
-            case UNAUTHENTICATED -> throw new UnauthenticatedException(e.getMessage());
-            case INVALID_ARGUMENT -> throw new InvalidArgumentException(e.getMessage());
-            case UNAVAILABLE -> throw new ServiceUnavailableException(e.getMessage());
+            case UNKNOWN -> throw new RuntimeException(e.getMessage(),e);
+            case NOT_FOUND -> throw new EntityNotFoundException(e.getMessage(),e);
+            case UNAUTHENTICATED -> throw new UnauthenticatedException(e.getMessage(),e);
+            case INVALID_ARGUMENT -> throw new InvalidArgumentException(e.getMessage(),e);
+            case UNAVAILABLE -> throw new ServiceUnavailableException(e.getMessage(),e);
             default -> throw new RuntimeException("gRPC error: " + e.getMessage(), e);
         }
     }

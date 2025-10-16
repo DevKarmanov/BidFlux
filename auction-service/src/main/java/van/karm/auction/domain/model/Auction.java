@@ -87,6 +87,15 @@ public class Auction {
     @BatchSize(size = 20)
     private Set<UUID> allowedUserIds = new HashSet<>();
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean checked = false;
+
+    @Column
+    private UUID winnerId;
+
+    @Column
+    private BigDecimal finalAmount;
 
     public Auction(UUID ownerId, String title, String description, BigDecimal startPrice, BigDecimal bidIncrement, BigDecimal reservePrice, boolean isPrivate, String accessCodeHash, AuctionStatus status, LocalDateTime startDate, LocalDateTime endDate, CurrencyType currency) {
         this.ownerId = ownerId;

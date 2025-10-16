@@ -10,6 +10,9 @@ tags:
   - name: User
     description: Получение информации о пользователях
 
+security:
+  - bearerAuth: []
+
 paths:
   /auth/login:
     post:
@@ -18,6 +21,7 @@ paths:
       summary: Логин пользователя
       description: Аутентификация пользователя по username и password. Возвращает access и refresh токены.
       operationId: login
+      security: []
       requestBody:
         required: true
         content:
@@ -58,8 +62,9 @@ paths:
       tags:
         - Auth
       summary: Регистрация нового пользователя
-      description: Создает нового пользователя с username и password.
+      description: Создает нового пользователя с username, password и дополнительными данными.
       operationId: register
+      security: [ ]
       requestBody:
         required: true
         content:
@@ -69,15 +74,37 @@ paths:
               required:
                 - username
                 - password
+                - firstName
+                - email
               properties:
                 username:
                   type: string
                   description: Логин пользователя
+                  minLength: 3
+                  maxLength: 50
+                  pattern: "^[a-zA-Z0-9_]+$"
                 password:
                   type: string
                   description: Пароль пользователя
+                  minLength: 8
+                  maxLength: 100
+                firstName:
+                  type: string
+                  description: Имя пользователя
+                  minLength: 1
+                  maxLength: 50
+                  pattern: "^[a-zA-Z]+$"
+                lastName:
+                  type: string
+                  description: Фамилия пользователя
+                  maxLength: 50
+                  pattern: "^[a-zA-Z]*$"
+                email:
+                  type: string
+                  format: email
+                  description: Электронная почта пользователя
       responses:
-        '200':
+        '201':
           description: Пользователь успешно зарегистрирован
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -93,6 +120,7 @@ paths:
       summary: Обновление access токена
       description: Возвращает новый access токен на основе refresh токена.
       operationId: refresh
+      security: []
       parameters:
         - name: X-Refresh-Token
           in: header
@@ -108,14 +136,203 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+
+  /user/password/{username}:
+    put:
+      tags:
+        - User
+      summary: Обновление пароля
+      description: >
+        Дает возможность изменить пароль от аккаунта. Доступно только если пользователь меняет свои данные или если запрос пришел от администратора.
+      operationId: putNewPassword
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Имя пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                  description: Старый пароль. **(Если запрос от администратора, то может быть null)**
+                  minLength: 8
+                  maxLength: 100
+                newPassword:
+                  type: string
+                  description: Новый пароль. **(Обязателен для всех)**
+                  minLength: 8
+                  maxLength: 100
+              required:
+                - newPassword
+      responses:
+        '204':
+          description: Успешное обновление
+        '400':
+          description: Некорректные данные
+        '403':
+          description: Недостаточно прав на выполнение
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+  /user/getAll:
+    get:
+      tags:
+        - User
+      summary: Получить список пользователей
+      description: >
+        Возвращает постраничный список активных пользователей, не скрытых и не заблокированных.
+        Можно запрашивать только нужные поля с помощью параметра **fields**.  
+
+        - Если `fields` не указан, по умолчанию возвращаются поля:  
+          `id`, `username`.
+      operationId: getAllUsers
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Номер страницы (начиная с 0)
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          description: Количество элементов на странице
+          schema:
+            type: integer
+            default: 5
+        - name: fields
+          in: query
+          required: false
+          description: Поля, которые нужно вернуть
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - id
+                - username
+      responses:
+        '200':
+          description: Список пользователей с постраничной навигацией
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+              examples:
+                default:
+                  summary: Пример ответа по умолчанию
+                  value:
+                    data:
+                      - id: "0b7f4682-9b21-4db6-9c8d-8164c6c91d2a"
+                        username: "user1"
+                      - id: "1298a249-3a1b-46e4-9c15-1d5bb25369a2"
+                        username: "admin"
+                    pageNumber: 0
+                    pageSize: 5
+                    totalElements: 2
+                    totalPages: 1
+                    first: true
+                    last: true
+                    numberOfElements: 2
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user:
+    delete:
+      tags:
+        - User
+      summary: Удалить свой аккаунт
+      operationId: delMyAccount
+      description: >
+        Эндпоинт для **удаления собственного аккаунта**.  
+      
+        - Если пользователь **не является победителем** ни в одном аукционе и **не имеет активных или архивных аукционов**, его аккаунт будет **удалён полностью**.  
+        - В противном случае будет выполнено **частичное удаление данных**, включая:  
+          - аннулирование всех выданных токенов,  
+          - удаление части персональной информации, кроме сведений, необходимых для **финансовой отчётности**, разрешения **споров между участниками**, а также **исторического учёта активности на платформе**, 
+          - освобождение никнейма для повторной регистрации.
+      responses:
+        '204':
+          description: Успешное удаление
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /user/{username}:
+    patch:
+      tags:
+        - User
+      summary: Обновление данных об аккаунте
+      description: >
+        Дает возможность изменить данные страницы профиля. Доступно только если пользователь меняет данные о себе или если запрос пришел от администратора.
+      operationId: patchUserInfo
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Имя пользоавтеля
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  description: Имя пользователя
+                  minLength: 1
+                  maxLength: 50
+                lastName:
+                  type: string
+                  description: Фамилия пользователя
+                  maxLength: 50
+                email:
+                  type: string
+                  description: Электронная почта
+                  format: email
+      responses:
+        '204':
+          description: Успешное обновление
+        '400':
+          description: Некорректные данные
+        '403':
+          description: Недостаточно прав на выполнение
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
     get:
       tags:
         - User
       summary: Получение информации о пользователе
       description: >
-        Возвращает информацию о пользователе по имени. Можно запрашивать конкретные поля (`id`, `username`, `roles`).
-        Если поля не указаны, возвращаются `id` и `username`. Требуется Bearer Token.
+        Возвращает информацию о пользователе.
+        Можно запрашивать только нужные поля с помощью параметра **fields**.  
+
+        - Если `fields` не указан, по умолчанию возвращаются поля:  
+          `id`, `username`, `firstName`, `lastName`, `email`, `deleted`, `enabled`.  
+        Можно запросить `roles`, но необходимо указать явно.
       operationId: getUserInfo
       parameters:
         - name: username
@@ -134,10 +351,13 @@ paths:
               enum:
                 - id
                 - username
+                - firstName
+                - lastName
+                - email
+                - deleted
+                - enabled
                 - roles
           description: Поля, которые нужно вернуть
-      security:
-        - bearerAuth: []
       responses:
         '200':
           $ref: '#/components/schemas/DynamicUserResponse'
@@ -148,6 +368,187 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /user/switch/block/{username}:
+    post:
+      tags:
+        - User
+      summary: Переключение статуса блокировки пользователя
+      description: >
+        Блокирует или разблокирует пользователя. **Доступно только для администраторов**
+      operationId: switchUserBlockStatus
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Имя пользователя
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  description: Причина блокировки. **(Указывается только в случае блокировки)**
+                  type: string
+              required:
+                - reason
+      responses:
+        '200':
+          description: Статус пользователя успешно изменён
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                blocked:
+                  summary: Пользователь заблокирован
+                  value: "User blocked: violation of rules"
+                unblocked:
+                  summary: Пользователь разблокирован
+                  value: "User unblocked"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав на выполнение
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/forced/{username}:
+    delete:
+      tags:
+        - User
+      summary: Принудительное удаление пользователя
+      description: >
+        Принудительно полностью удаляет аккаунт пользователя. **Доступно только для администраторов**
+      operationId: forceDelUser
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Имя пользователя
+      responses:
+        '204':
+          description: Пользователь успешно удален
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав на выполнение
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /roles/add/{username}:
+    post:
+      tags:
+        - User
+      summary: Назначение ролей пользователю
+      description: >
+        Создает (в случае отсутствия) и назначает любые указанные роли пользователю. **Доступно только для администраторов**
+      operationId: rolesAdd
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Имя пользователя
+        - name: roles
+          required: true
+          in: query
+          schema:
+            type: array
+            example:
+              - admin
+              - ROLE_MODERATOR
+      responses:
+        '204':
+          description: Роли успешно назначены
+        '400':
+          description: Некорректные аргументы
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав на выполнение
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/roles/revoke/{username}:
+    post:
+      tags:
+        - User
+      summary: Снятие ролей с пользователя
+      description: >
+        Снимает любые указанные роли с пользователя. **Доступно только для администраторов**
+      operationId: rolesRevoke
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Имя пользователя
+        - name: roles
+          required: true
+          in: query
+          schema:
+            type: array
+            example:
+              - admin
+              - ROLE_MODERATOR
+      responses:
+        '204':
+          description: Роли успешно сняты
+        '400':
+          description: Некорректные аргументы
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав на выполнение
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/forced/roles:
+    delete:
+      tags:
+        - User
+      summary: Удаление ролей из БД
+      description: >
+        Удаляет указанные ролей из БД. **Доступно только для администраторов**
+      operationId: forcedRolesRevoke
+      parameters:
+        - name: roles
+          required: true
+          in: query
+          schema:
+            type: array
+            example:
+              - admin
+              - ROLE_MODERATOR
+      responses:
+        '204':
+          description: Роли успешно удалены
+        '400':
+          description: Некорректные аргументы
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Недостаточно прав на выполнение
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
 components:
   securitySchemes:
     bearerAuth:
@@ -156,6 +557,57 @@ components:
       bearerFormat: JWT
 
   schemas:
+    PagedResponse:
+      type: object
+      description: >
+        Стандартная обёртка для постраничных ответов.  
+        Содержит массив объектов с данными и метаинформацию о странице.
+      properties:
+        data:
+          type: array
+          description: Массив объектов с динамическим набором полей
+          items:
+            type: object
+            additionalProperties: true
+        pageNumber:
+          type: integer
+          description: Номер текущей страницы (начиная с 0)
+          example: 0
+        pageSize:
+          type: integer
+          description: Размер страницы (количество элементов)
+          example: 5
+        totalElements:
+          type: integer
+          format: int64
+          description: Общее количество элементов
+          example: 42
+        totalPages:
+          type: integer
+          description: Общее количество страниц
+          example: 9
+        first:
+          type: boolean
+          description: Флаг — является ли страница первой
+          example: true
+        last:
+          type: boolean
+          description: Флаг — является ли страница последней
+          example: false
+        numberOfElements:
+          type: integer
+          description: Количество элементов на текущей странице
+          example: 5
+      required:
+        - data
+        - pageNumber
+        - pageSize
+        - totalElements
+        - totalPages
+        - first
+        - last
+        - numberOfElements
+
     ApiError:
       type: object
       required:
@@ -167,13 +619,10 @@ components:
       properties:
         status:
           type: integer
-          example: 400
         error:
           type: string
-          example: "Bad Request"
         message:
           type: string
-          example: "Validation failed: username must not be empty"
         path:
           type: string
           example: "/auth/login"
@@ -224,13 +673,9 @@ components:
 
     DynamicUserResponse:
       type: object
-      description: Возвращаемые поля могут быть динамическими, в зависимости от параметра `fields`.
+      description: Стандартная обертка для динамических одиночных объектов.
       additionalProperties:
         description: Значение поля (id, username или roles)
-      example:
-        id: 123
-        username: "user1"
-        roles: [ "USER" ]
 
     Tokens:
       type: object

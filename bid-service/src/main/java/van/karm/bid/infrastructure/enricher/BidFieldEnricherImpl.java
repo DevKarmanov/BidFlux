@@ -3,6 +3,7 @@ package van.karm.bid.infrastructure.enricher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import van.karm.bid.application.enricher.FieldEnricher;
 import van.karm.bid.application.grpc.UserGrpcClient;
 
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.concurrent.*;
 
 @RequiredArgsConstructor
 @Component
-public class BidFieldEnricherImpl implements BidFieldEnricher {
+public class BidFieldEnricherImpl implements FieldEnricher {
     private final UserGrpcClient userGrpcClient;
 
     @Override

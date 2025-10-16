@@ -1,12 +1,11 @@
 package van.karm.auth.presentation.controller.auth;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import van.karm.auth.presentation.dto.request.UserRegData;
 import van.karm.auth.presentation.dto.response.token.AccessToken;
 import van.karm.auth.presentation.dto.response.token.Tokens;
 
@@ -23,14 +22,15 @@ public interface AuthController {
 
     @PostMapping("/registration")
     ResponseEntity<Void> register(
-            @RequestParam @NotBlank(message = "Username must not be empty") String username,
-            @RequestParam @NotBlank(message = "Password must not be empty") String password
+            @RequestBody @Valid UserRegData userRegData
     );
 
     @PostMapping("/refresh")
     ResponseEntity<AccessToken> refresh(
             @RequestHeader("X-Refresh-Token") @NotBlank(message = "Refresh token must not be empty") String refreshToken
     );
+
+    //todo ендпоинт для восстановления пароля
 }
 
 

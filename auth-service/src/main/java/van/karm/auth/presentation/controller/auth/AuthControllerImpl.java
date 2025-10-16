@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import van.karm.auth.application.service.jwt.access.AccessTokenService;
 import van.karm.auth.application.service.auth.AuthService;
+import van.karm.auth.presentation.dto.request.UserRegData;
 import van.karm.auth.presentation.dto.response.token.AccessToken;
 import van.karm.auth.presentation.dto.response.token.Tokens;
 
@@ -21,8 +22,8 @@ public class AuthControllerImpl implements AuthController {
     }
 
     @Override
-    public ResponseEntity<Void> register(String username, String password) {
-        userService.register(username, password);
+    public ResponseEntity<Void> register(UserRegData userRegData) {
+        userService.register(userRegData);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

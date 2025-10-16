@@ -29,4 +29,8 @@ public class CustomUserDetails implements UserDetails {
     public boolean isEnabled() {
         return user.isEnabled();
     }
+
+    public String getBlockReason() {
+        return user.getBlockReason();
+    }
 }

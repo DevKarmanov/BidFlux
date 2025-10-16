@@ -19,6 +19,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import van.karm.auction.application.service.AuctionService;
 import van.karm.auction.domain.model.CurrencyType;
+import van.karm.auction.domain.repo.AuctionRepo;
+import van.karm.auction.presentation.controller.auction.AuctionController;
 import van.karm.auction.presentation.dto.request.CreateAuction;
 import van.karm.auction.presentation.dto.response.CreatedAuction;
 import van.karm.auction.presentation.dto.response.DynamicResponse;
@@ -45,6 +47,9 @@ class AuctionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private AuctionRepo auctionRepo;
 
     @MockitoBean
     private AuctionService auctionService;

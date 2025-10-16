@@ -1,0 +1,114 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-auction
+      author: ivan
+      changes:
+        - addColumn:
+            tableName: auction
+            columns:
+              - column:
+                  name: title
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_price
+                  type: numeric(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bid_increment
+                  type: numeric(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reserve_price
+                  type: numeric(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_private
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: checked
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: access_code_hash
+                  type: varchar(255)
+              - column:
+                  name: start_date
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_date
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency
+                  type: varchar(3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: winner_id
+                  type: uuid
+              - column:
+                  name: final_amount
+                  type: numeric(19,4)
+
+        - createIndex:
+            indexName: idx_status_end_date
+            tableName: auction
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: end_date
+
+        - createIndex:
+            indexName: idx_start_price
+            tableName: auction
+            columns:
+              - column:
+                  name: start_price
+
+        - createIndex:
+            indexName: idx_start_date
+            tableName: auction
+            columns:
+              - column:
+                  name: start_date
+
+        - createIndex:
+            tableName: auction
+            indexName: idx_auction_owner_status
+            columns:
+              - column:
+                  name: owner_id
+              - column:
+                  name: status
+
+        - addForeignKeyConstraint:
+            constraintName: fk_auction_user
+            baseTableName: auction
+            baseColumnNames: owner_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: SET NULL
+
+        - sql:
+            sql: >
+              ALTER TABLE auction
+              ADD CONSTRAINT chk_start_end_reserve
+              CHECK (start_date < end_date AND reserve_price >= start_price);

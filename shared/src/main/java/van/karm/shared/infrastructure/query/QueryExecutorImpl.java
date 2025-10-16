@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import van.karm.shared.application.provider.AllowedFieldsProvider;
 import van.karm.shared.application.rule.FieldRule;
+import van.karm.shared.infrastructure.query.builder.LogicalOperator;
 import van.karm.shared.infrastructure.query.builder.QueryBuilder;
 import van.karm.shared.infrastructure.query.runner.QueryRunner;
 import van.karm.shared.infrastructure.query.runner.page.PagedQueryRunner;
@@ -30,8 +31,8 @@ public class QueryExecutorImpl implements QueryExecutor {
     @Override
     public <T> Map<String, Object> selectQueryByField(
             Class<T> entityClass,
-            String fieldName,
-            Object fieldValue,
+            Map<String, Object> filter,
+            LogicalOperator logicalOperator,
             Set<String> requestedFields,
             AllowedFieldsProvider allowedFieldsProvider,
             FieldRule fieldRule) {
@@ -41,9 +42,7 @@ public class QueryExecutorImpl implements QueryExecutor {
 
         if (fieldsToSelect.isEmpty()) return new LinkedHashMap<>();
 
-        Map<String, Object> filter = Map.of(fieldName, fieldValue);
-
-        String jpql = queryBuilder.buildSelectQuery(entityClass, filter, fieldsToSelect);
+        String jpql = queryBuilder.buildSelectQuery(entityClass, filter, fieldsToSelect, logicalOperator);
         Tuple tuple = queryRunner.run(jpql, filter);
 
         return fieldsToSelect.stream()
@@ -54,6 +53,7 @@ public class QueryExecutorImpl implements QueryExecutor {
     public <T> Page<Map<String, Object>> selectQueryByFieldPaged(
             Class<T> entityClass,
             Map<String, Object> filters,
+            LogicalOperator logicalOperator,
             Set<String> requestedFields,
             AllowedFieldsProvider allowedFieldsProvider,
             FieldRule fieldRule,
@@ -66,7 +66,7 @@ public class QueryExecutorImpl implements QueryExecutor {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
 
-        String jpql = queryBuilder.buildSelectQuery(entityClass, filters, fieldsToSelect);
+        String jpql = queryBuilder.buildSelectQuery(entityClass, filters, fieldsToSelect, logicalOperator);
         List<Tuple> tuples = pagedQueryRunner.runPaged(jpql, filters,
                 (int) pageable.getOffset(), pageable.getPageSize());
 

@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 public class JPQLQueryBuilder implements QueryBuilder {
     @Override
-    public String buildSelectQuery(Class<?> entityClass, Map<String, Object> filters, Set<String> fieldsToSelect) {
+    public String buildSelectQuery(Class<?> entityClass, Map<String, Object> filters, Set<String> fieldsToSelect,LogicalOperator operator) {
         String alias = "e";
 
         String selectClause = fieldsToSelect.stream()
@@ -15,9 +15,12 @@ public class JPQLQueryBuilder implements QueryBuilder {
 
         String whereClause = filters.keySet().stream()
                 .map(o -> alias + "." + o + " = :" + o)
-                .collect(Collectors.joining(" AND "));
+                .collect(Collectors.joining(
+                        operator == LogicalOperator.NONE ? "" : " " + operator.name() + " "
+                ));
 
-        return "SELECT " + selectClause + " FROM " + entityClass.getSimpleName() + " " + alias +
+        return "SELECT " + selectClause +
+                " FROM " + entityClass.getSimpleName() + " " + alias +
                 (whereClause.isEmpty() ? "" : " WHERE " + whereClause);
     }
 

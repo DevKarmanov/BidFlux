@@ -10,7 +10,7 @@ import java.util.Set;
 @Qualifier("user")
 public class UserAllowedFieldsProvider implements AllowedFieldsProvider {
     private static final Set<String> ALLOWED_USER_FIELDS = Set.of(
-            "id", "username"
+            "id", "username","firstName","lastName","email","deleted","enabled"
     );
 
     @Override

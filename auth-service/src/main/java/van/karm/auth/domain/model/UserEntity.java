@@ -1,9 +1,11 @@
 package van.karm.auth.domain.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -34,9 +36,20 @@ public class UserEntity {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
+    private String firstName;
+
+    private String lastName;
+
+    @Email
+    @Column(nullable = false)
+    private String email;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean enabled = true;
+
+    private String blockReason;
 
     @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -54,4 +67,11 @@ public class UserEntity {
     )
     @BatchSize(size = 20)
     private Set<Role> roles;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean deleted = false;
+
+    @Column(nullable = false)
+    private LocalDate lastOnline;
 }

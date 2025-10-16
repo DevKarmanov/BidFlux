@@ -1,0 +1,80 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-complaints
+      author: ivan
+      changes:
+        - createTable:
+            tableName: complaints
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: author_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reason
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: status
+                  type: varchar(50)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: complaints
+            baseColumnNames: author_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_complaints_author_user
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_complaints_author
+            tableName: complaints
+            columns:
+              - column:
+                  name: author_id
+
+        - createIndex:
+            indexName: idx_complaints_target
+            tableName: complaints
+            columns:
+              - column:
+                  name: target_type
+              - column:
+                  name: target_id
+
+        - createIndex:
+            indexName: idx_complaints_author_target
+            tableName: complaints
+            columns:
+              - column:
+                  name: author_id
+              - column:
+                  name: target_type
+              - column:
+                  name: target_id

@@ -1,28 +1,35 @@
 server:
   port: 8083
 
+settings:
+  scheduler:
+    clean:
+      accounts:
+        execute: true //Удалять ли ненужные аккаунты
+        repeat-time-days: 3 //Как часто проверять на "ненужность" (в днях)
+
 auth:
   jwt:
     issuer: "auth-service"
-    audience: "auction-service,bid-service"
-    access-ttl-min: 5      # не забудьте изменить под свои нужды
+    audience: "auction-service,bid-service,complaint-service"
+    access-ttl-min: 50
     refresh-ttl-days: 7
-    private-key-path: /certs/jwt/private_jwt_key-example.pem  # замените на реальный путь
-    public-key-path: /certs/jwt/public_jwt_key-example.pem    # замените на реальный путь
+    private-key-path: /certs/jwt/private_jwt_key-example.pem
+    public-key-path: /certs/jwt/public_jwt_key-example.pem
 
 grpc:
   server:
     port: 5435
     security:
       enabled: true
-      certificate-chain: classpath:certs/grpc/server-auth-cert-example.pem  # замените на ваш cert
-      private-key: classpath:certs/grpc/server-auth-key-example.pem         # замените на ваш key
+      certificate-chain: classpath:certs/grpc/server-auth-cert-example.pem
+      private-key: classpath:certs/grpc/server-auth-key-example.pem
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/your_db_name    # имя БД
-    username: your_db_user                                # пользователь БД
-    password: your_db_password                            # пароль БД
+    url: jdbc:postgresql://localhost:5432/db_name
+    username: your_username
+    password: your_password
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml

@@ -1,0 +1,89 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-complaints-archive
+      author: ivan
+      changes:
+        - createTable:
+            tableName: complaints_archive
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: author_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reason
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: resolved_at
+                  type: timestamp
+              - column:
+                  name: resolved_by
+                  type: uuid
+              - column:
+                  name: moderator_comment
+                  type: text
+
+        - addForeignKeyConstraint:
+            baseTableName: complaints_archive
+            baseColumnNames: author_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_complaints_archive_author_user
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_archive_author
+            tableName: complaints_archive
+            columns:
+              - column:
+                  name: author_id
+
+        - createIndex:
+            indexName: idx_archive_target
+            tableName: complaints_archive
+            columns:
+              - column:
+                  name: target_type
+              - column:
+                  name: target_id
+
+        - createIndex:
+            indexName: idx_archive_status_type
+            tableName: complaints_archive
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: target_type

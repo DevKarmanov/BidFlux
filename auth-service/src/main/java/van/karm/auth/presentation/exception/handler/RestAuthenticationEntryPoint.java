@@ -11,20 +11,24 @@ import java.time.Instant;
 
 @Component
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
+
     @Override
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
+
+        String message = authException.getMessage();
+
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.getWriter().write("""
-            {
-              "status":401,
-              "error":"Unauthorized",
-              "message":"%s",
-              "path":"%s",
-              "timestamp":"%s"
-            }
-            """.formatted(authException.getMessage(), request.getRequestURI(), Instant.now()));
+        {
+          "status":401,
+          "error":"Unauthorized",
+          "message":"%s",
+          "path":"%s",
+          "timestamp":"%s"
+        }
+        """.formatted(message, request.getRequestURI(), Instant.now()));
     }
 }

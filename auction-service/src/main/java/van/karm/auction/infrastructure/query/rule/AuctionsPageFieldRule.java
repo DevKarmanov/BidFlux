@@ -7,7 +7,7 @@ import van.karm.shared.application.rule.FieldRule;
 import java.util.Set;
 
 @Component
-@Qualifier("auctions")
+@Qualifier("auction-page-field-rule")
 public class AuctionsPageFieldRule implements FieldRule {
     @Override
     public void apply(Set<String> filteredRequestedFields, Set<String> originalRequestedFields) {

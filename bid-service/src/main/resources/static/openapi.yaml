@@ -7,6 +7,64 @@ security:
   - bearerAuth: []
 
 paths:
+  /websocket/info:
+    post:
+      tags:
+        - WebSocket
+      summary: Информация по подключению к WebSocket для ставок
+      description: |
+        **(Такого ендпоинта не существует, он фиктивный)** Позволяет узнать, как подключиться к WebSocket для получения обновлений по ставкам на аукционах.
+
+        **Подключение:** STOMP + SockJS: `ws://localhost:8081/ws`  
+        **Заголовок авторизации:** Authorization: Bearer <JWT_TOKEN>  
+
+        **Топики:**
+        - `/topic/bid/{auctionId}` — обновления по последней ставке
+
+        **Пример отправки:**
+        ```json
+        { "auctionId": "4347c5f7-7c47-40df-b8a1-564f900dc001" }
+        ```
+
+        **Пример ответа:**
+        ```json
+        { "status": "ok", "value": 200.00 }
+        ```
+
+        **Пример ошибки:**
+        ```json
+        { "status": "error", "message": "Auction not found" }
+        ```
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auctionId:
+                  type: string
+                  format: uuid
+                  description: Идентификатор аукциона
+              required:
+                - auctionId
+      responses:
+        '200':
+          description: Пример успешного ответа
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ ok, error ]
+                  value:
+                    type: number
+                  message:
+                    type: string
+  
   /bid:
     post:
       tags:

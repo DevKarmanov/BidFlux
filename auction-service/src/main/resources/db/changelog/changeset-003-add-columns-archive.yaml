@@ -1,0 +1,96 @@
+databaseChangeLog:
+  - changeSet:
+      id: 3
+      author: ivan
+      changes:
+        - addColumn:
+            tableName: archived_auctions
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_price
+                  type: numeric(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bid_increment
+                  type: numeric(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reserve_price
+                  type: numeric(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_private
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_date
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_date
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency
+                  type: varchar(3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: final_amount
+                  type: numeric(19,4)
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: archived_auctions
+            indexName: idx_winner_id
+            columns:
+              - column:
+                  name: winner_id
+        - createIndex:
+            tableName: archived_auctions
+            indexName: idx_owner_id
+            columns:
+              - column:
+                  name: owner_id
+
+        - createIndex:
+            tableName: archived_auctions
+            indexName: idx_archived_status_end_date
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: end_date
+        - createIndex:
+            tableName: archived_auctions
+            indexName: idx_archived_start_price
+            columns:
+              - column:
+                  name: start_price

@@ -1,5 +1,7 @@
 databaseChangeLog:
   - include:
-      file: db/changelog/changeset-001-create-auction.yaml
+      file: db/changelog/changeset-001-add-columns-auction.yaml
   - include:
       file: db/changelog/changeset-002-create-auction-allowed-users.yaml
+  - include:
+      file: db/changelog/changeset-003-add-columns-archive.yaml

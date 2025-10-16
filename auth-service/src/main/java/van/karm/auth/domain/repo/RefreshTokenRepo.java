@@ -10,11 +10,10 @@ import van.karm.auth.domain.repo.projection.UserAuthData;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface RefreshTokenRepo extends JpaRepository<RefreshTokenEntity, String> {
-    Optional<RefreshTokenEntity> findByJtiAndRevokedFalse(String jti);
-
     @Query("""
     SELECT u.username AS username, r.name AS roles
     FROM RefreshTokenEntity t
@@ -41,5 +40,11 @@ DO UPDATE SET jti = EXCLUDED.jti, issued_at = EXCLUDED.issued_at, expires_at = E
                             @Param("deviceId") String deviceId,
                             @Param("issued") LocalDateTime issued,
                             @Param("expires") LocalDateTime expires);
+
+    @Modifying
+    @Query("UPDATE RefreshTokenEntity r SET r.revoked = true WHERE r.user.username = :username AND r.revoked = false")
+    void revokeAllTokensByUsername(@Param("username") String username);
+
+    void deleteAllByUserIdIn(Set<UUID> userIds);
 
 }

@@ -2,12 +2,13 @@ package van.karm.bid.infrastructure.sanitizer;
 
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import van.karm.bid.application.sanitizer.FieldSanitizer;
 
 import java.util.Map;
 import java.util.Set;
 
 @Component
-public class BidFieldSanitizerImpl implements BidFieldSanitizer {
+public class BidFieldSanitizerImpl implements FieldSanitizer {
 
     @Override
     public void sanitize(Page<Map<String, Object>> fieldsMap, Set<String> requestedFields) {

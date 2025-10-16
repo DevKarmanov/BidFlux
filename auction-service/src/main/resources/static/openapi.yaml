@@ -12,13 +12,313 @@ info:
     за исключением случаев, когда явно указано иное.
 
 tags:
+  - name: Archived auctions
+    description: Методы для работы с архивными аукционами
   - name: Auctions
-    description: Методы для работы с аукционами (создание, получение информации)
+    description: Методы для работы с аукционами
 
 security:
   - bearerAuth: []
 
 paths:
+  /auction/archive/getAll:
+    get:
+      tags:
+        - Archived auctions
+      summary: Получить список своих архивных аукционов
+      description: |
+        Возвращает постраничный список аукционов, созданных пользователем и перемещённых в архив.  
+        
+        Можно запросить только необходимые поля, указав их в параметре **fields**.  
+
+               - Если `fields` не передан, по умолчанию возвращаются поля:  
+                 `id,title,reservePrice,isPrivate,status,currency,ownerId,winnerId`.  
+               - Чтобы получить дополнительные поля (`winnerName`, `ownerName`), их нужно явно указать в `fields`.
+      operationId: getMyArchivedAuctions
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 0)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 5
+        - name: fields
+          in: query
+          description: |
+            Список доступных полей, которые можно включить в ответ.  
+            Если не указано — вернутся поля по умолчанию.
+          required: false
+          explode: true
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - id
+                - title
+                - reservePrice
+                - isPrivate
+                - status
+                - currency
+                - ownerId
+                - winnerId
+                - winnerName
+                - ownerName
+      responses:
+        '200':
+          description: Список архивных аукционов с постраничной навигацией
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auction/archive/{id}:
+    get:
+      tags:
+        - Archived auctions
+      summary: Получить информацию об архивном аукционе
+      description: |
+        Можно запросить только необходимые поля, указав их в параметре **fields**.  
+        
+                - Если `fields` не передан, по умолчанию возвращаются поля:  
+                  `id,title,description,startPrice,bidIncrement,reservePrice,isPrivate,status,startDate,endDate,currency,ownerId,winnerId,finalAmount`.  
+                - Чтобы получить дополнительные поля (`winnerName`, `ownerName`), их нужно явно указать в `fields`.
+      operationId: getMyArchivedAuction
+      parameters:
+        - name: id
+          in: path
+          description: Уникальный идентификатор архивного аукциона
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fields
+          in: query
+          description: |
+            Список доступных полей для включения в ответ.  
+            Если не указано — вернутся поля по умолчанию.
+          required: false
+          explode: true
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - id
+                - title
+                - description
+                - startPrice
+                - bidIncrement
+                - reservePrice
+                - isPrivate
+                - status
+                - startDate
+                - endDate
+                - currency
+                - ownerId
+                - winnerId
+                - finalAmount
+                - winnerName
+                - ownerName
+      responses:
+        '200':
+          description: Успешный ответ с динамическим набором полей
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+              examples:
+                default:
+                  summary: Ответ по умолчанию (если fields не передан)
+                  value:
+                    data:
+                      currency: "BYN"
+                      bidIncrement: 0.1000
+                      reservePrice: 0.1000
+                      status: "ACTIVE"
+                      isPrivate: false
+                      title: "yEpyzMKowD"
+                      id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
+                minimal:
+                  summary: Только id и ownerName
+                  value:
+                    data:
+                      id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
+                      ownerName: "venik"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Аукцион не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                status: 404
+                error: "Entity not found"
+                message: "Archived auction with id 123e4567-e89b-12d3-a456-426614174000 not found"
+                path: "/auction/archive/archive/123e4567-e89b-12d3-a456-426614174000"
+                timestamp: "2025-10-13T12:30:00Z"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
+  /auction/archive/getAll/{username}:
+    get:
+      tags:
+        - Archived auctions
+      summary: Получить список архивных аукционов конкретного пользователя постранично
+      description: |
+        Возвращает список архивированных аукционов с постраничной навигацией.
+        Можно указать, какие поля включить в ответ через параметр **fields**.  
+
+        Если `fields` не передан, по умолчанию возвращаются поля:  
+                `id,title,reservePrice,isPrivate,status,currency,ownerId,winnerId,startPrice`.  
+              - Чтобы получить дополнительные поля (`winnerName`, `ownerName`), их нужно явно указать в `fields`.
+      operationId: getAllArchivedUserAuctions
+      parameters:
+        - name: username
+          in: path
+          description: Имя пользователя
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          description: Номер страницы (начиная с 0)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          description: Размер страницы (количество элементов на странице)
+          schema:
+            type: integer
+            minimum: 1
+            default: 5
+        - name: fields
+          in: query
+          description: |
+            Список доступных полей для включения в ответ.  
+            Если не указано — вернутся поля по умолчанию.
+          required: false
+          explode: true
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - id
+                - title
+                - reservePrice
+                - isPrivate
+                - status
+                - currency
+                - ownerId
+                - winnerId
+                - winnerName
+                - ownerName
+                - startPrice
+      responses:
+        '200':
+          description: Успешный ответ с постраничным списком аукционов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+              example:
+                data:
+                  - title: "WawzcgSbNm"
+                    description: "JWflKnMwxZYTDtgrumrghmzIPYDihY"
+                    startPrice: 0.0000
+                    isPrivate: false
+                    id: "87912135-68b8-4b72-ba89-5c253d9e5606"
+                    currency: "BYN"
+                    ownerName: "venik"
+                  - title: "WawzcgSbNm"
+                    description: "JWflKnMwxZYTDtgrumrghmzIPYDihY"
+                    startPrice: 0.0000
+                    isPrivate: true
+                    id: "1c2027b0-5964-43ad-ac12-660a2a192452"
+                    currency: "BYN"
+                pageNumber: 0
+                pageSize: 5
+                totalElements: 6
+                totalPages: 2
+                first: true
+                last: false
+                numberOfElements: 5
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Если запрос отправляет не администратор
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auction/archive/forced/{id}:
+    delete:
+      tags:
+        - Archived auctions
+      summary: Удалить архивный аукцион
+      description: |
+        Удалить архивный аукцион. Только для администраторов.
+      operationId: archiveForcedDelAuction
+      parameters:
+        - name: id
+          in: path
+          description: Уникальный идентификатор аукциона
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Аукцион успешно удалён
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Только администратор может выполнять этот запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Аукцион не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /auction:
     post:
       tags:
@@ -78,7 +378,77 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /auction/forced/{id}:
+    delete:
+      tags:
+        - Auctions
+      summary: Принудительно удалить аукцион
+      description: |
+        Удалить аукцион несмотря ни на что. Только для администраторов.
+      operationId: forcedDelAuction
+      parameters:
+        - name: id
+          in: path
+          description: Уникальный идентификатор аукциона
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Аукцион успешно удалён
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Только администратор может выполнять этот запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Аукцион не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /auction/{id}:
+    delete:
+      tags:
+        - Auctions
+      summary: Удалить аукцион
+      description: |
+        Аукцион удаляется только если у него нет ставок или все ставки совершены владельцем.
+      operationId: delAuction
+      parameters:
+        - name: id
+          in: path
+          description: Уникальный идентификатор аукциона
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Аукцион успешно удалён
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Только администратор или владелец может выполнять этот запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Аукцион не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     get:
       tags:
         - Auctions
@@ -88,7 +458,7 @@ paths:
         Можно запросить только необходимые поля, указав их в параметре **fields**.  
         
         - Если `fields` не передан, по умолчанию возвращаются поля:  
-          `currency, startDate, startPrice, description, bidIncrement, reservePrice, status, endDate, isPrivate, title, id`.  
+          `id,title,description,startPrice,bidIncrement,reservePrice,isPrivate,status,startDate,endDate,currency,finalAmount`. 
         - Чтобы получить дополнительные поля (`allowedUsersCount`, `ownerName`), их нужно явно указать в `fields`.  
         - Поле **allowedUsersCount** доступно только для приватных аукционов.
       operationId: auctionInfo
@@ -109,26 +479,28 @@ paths:
         - name: fields
           in: query
           description: |
-            Список полей, которые необходимо вернуть.  
-            Возможные значения:  
-            `currency, startDate, startPrice, description, bidIncrement, reservePrice, status, endDate, isPrivate, title, id, allowedUsersCount, ownerName`
+            Список доступных полей для включения в ответ.  
+            Если не указано — вернутся поля по умолчанию.
           required: false
+          explode: true
+          style: form
           schema:
             type: array
             items:
               type: string
               enum:
-                - currency
-                - startDate
-                - startPrice
+                - id
+                - title
                 - description
+                - startPrice
                 - bidIncrement
                 - reservePrice
-                - status
-                - endDate
                 - isPrivate
-                - title
-                - id
+                - status
+                - startDate
+                - endDate
+                - currency
+                - finalAmount
                 - allowedUsersCount
                 - ownerName
       responses:
@@ -148,13 +520,9 @@ paths:
                   value:
                     data:
                       currency: "BYN"
-                      startDate: "2027-01-15T23:02:20Z"
-                      startPrice: 0.0000
-                      description: "dFqjjvMSPltGEKccDevaovyuMOSsOy"
                       bidIncrement: 0.1000
                       reservePrice: 0.1000
                       status: "ACTIVE"
-                      endDate: "2028-07-07T19:21:33Z"
                       isPrivate: false
                       title: "yEpyzMKowD"
                       id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
@@ -164,23 +532,6 @@ paths:
                     data:
                       id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
                       ownerName: "venik"
-                full:
-                  summary: Все поля включая allowedUsersCount (для приватного аукциона)
-                  value:
-                    data:
-                      id: "b6893a4a-fdf9-4e1c-95fb-054d1906da7c"
-                      title: "Закрытый аукцион"
-                      description: "Только для приглашённых"
-                      startPrice: 100.00
-                      bidIncrement: 10.00
-                      reservePrice: 200.00
-                      isPrivate: true
-                      status: "ACTIVE"
-                      startDate: "2025-09-10T10:00:00Z"
-                      endDate: "2025-09-15T18:00:00Z"
-                      currency: "USD"
-                      allowedUsersCount: 15
-                      ownerName: "admin"
         '404':
           description: Сущность не найдена
           content:
@@ -221,6 +572,75 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /auction/password/change/{id}:
+    post:
+      tags:
+        - Auctions
+      summary: Изменить пароль аукциона
+      description: |
+        Позволяет владельцу аукциона изменить пароль.  
+        Если параметр `resetAllowedUsers` установлен в `true`, все пользователи, имеющие доступ к приватному аукциону, будут удалены из списка допущенных.  
+        Поле `newPassword` обязательно и должно быть от 8 до 128 символов.
+      operationId: changeAuctionPassword
+      parameters:
+        - name: id
+          in: path
+          description: Уникальный идентификатор аукциона
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            examples:
+              changePassword:
+                summary: Изменение пароля аукциона
+                value:
+                  newPassword: "newStrongPassword123"
+                  resetAllowedUsers: true
+      responses:
+        '204':
+          description: Пароль успешно изменён
+        '400':
+          description: Ошибка валидации запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                invalidPassword:
+                  summary: Некорректный новый пароль
+                  value:
+                    status: 400
+                    error: "Validation error"
+                    message: "newPassword: must be between 8 and 128 characters"
+                    path: "/auction/password/change/123e4567-e89b-12d3-a456-426614174000"
+                    timestamp: "2025-10-13T12:00:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Доступ запрещён (не владелец аукциона и не администратор)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                accessDenied:
+                  summary: Пользователь не является владельцем аукциона
+                  value:
+                    status: 403
+                    error: "Access denied"
+                    message: "User is not allowed to change password for this auction"
+                    path: "/auction/password/change/123e4567-e89b-12d3-a456-426614174000"
+                    timestamp: "2025-10-13T12:01:00Z"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
   /auction/getAll:
     get:
       tags:
@@ -229,19 +649,12 @@ paths:
       description: |
         Возвращает список аукционов с постраничной навигацией.  
         Можно указать, какие поля включить в ответ через параметр **fields**.  
-
-        Особенности:  
-        1. Если `fields` не указан, то:  
+ 
+        Если `fields` не указан, то:  
            - для публичных возвращаются поля:  
-             `bidIncrement, reservePrice, status, endDate, isPrivate, title, id, currency, startDate, startPrice, description`  
+              `id,title,reservePrice,isPrivate,status,currency,ownerId,ownerName,startPrice`  
            - для приватных возвращаются поля:  
-             `isPrivate, title, id, currency, startPrice, description`  
-
-        2. Всего можно запросить поля:  
-           `bidIncrement, reservePrice, status, endDate, isPrivate, title, id, currency, startDate, startPrice, description, ownerName, ownerId`  
-
-        3. Для приватных аукционов возвращаются только:  
-           `title, description, startPrice, isPrivate, id, currency`
+             `isPrivate, title, id, currency, startPrice`
       operationId: getAllAuctions
       parameters:
         - name: page
@@ -262,26 +675,26 @@ paths:
             default: 5
         - name: fields
           in: query
+          description: |
+            Список доступных полей для включения в ответ.  
+            Если не указано — вернутся поля по умолчанию.
           required: false
-          description: Список полей, которые нужно включить в ответ
+          explode: true
+          style: form
           schema:
             type: array
             items:
               type: string
               enum:
-                - bidIncrement
-                - reservePrice
-                - status
-                - endDate
-                - isPrivate
-                - title
-                - id
-                - currency
-                - startDate
                 - startPrice
-                - description
-                - ownerName
+                - id
+                - title
+                - reservePrice
+                - isPrivate
+                - status
+                - currency
                 - ownerId
+                - ownerName
       responses:
         '200':
           description: Успешный ответ с постраничным списком аукционов
@@ -350,6 +763,20 @@ components:
             timestamp: "2025-08-30T14:30:05Z"
 
   schemas:
+    ChangePasswordRequest:
+      type: object
+      required:
+        - newPassword
+      properties:
+        newPassword:
+          type: string
+          description: Новый пароль аукциона
+          minLength: 8
+          maxLength: 128
+        resetAllowedUsers:
+          type: boolean
+          description: Сбрасывать ли список пользователей, имеющих доступ к приватному аукциону
+          default: false
     PagedResponse:
       type: object
       properties:

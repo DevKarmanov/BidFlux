@@ -1,0 +1,22 @@
+syntax="proto3";
+
+option java_multiple_files = true; //Разделять скоимплированные джава классы
+option java_package = "van.karm.bid"; //Package для сгенерированных классов (обычно соответствующий структуре модуля)
+option java_outer_classname = "BidServiceMessages"; //Это имя "оболочки" (outer class) для всех сгенерированных классов
+
+service BidService {
+  rpc CheckAuctionsActivity (PotentiallyInactiveAuctionsList) returns (DecisionOnAuctionInactivity);
+}
+
+message PotentiallyInactiveAuctions{
+  string auctionId = 1;
+  string auctionOwnerId = 2;
+}
+
+message PotentiallyInactiveAuctionsList {
+  repeated PotentiallyInactiveAuctions auctions = 1;
+}
+
+message DecisionOnAuctionInactivity {
+  map<string, bool> results = 1;
+}

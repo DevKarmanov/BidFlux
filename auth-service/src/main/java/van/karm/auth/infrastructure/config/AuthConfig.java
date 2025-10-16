@@ -7,7 +7,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,6 +26,7 @@ import van.karm.auth.presentation.exception.handler.RestAuthenticationEntryPoint
 @EnableConfigurationProperties(JwtProperties.class)
 @RequiredArgsConstructor
 @Configuration
+@EnableMethodSecurity
 public class AuthConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final JwtAuthenticationService jwtAuthenticationService;
@@ -70,6 +73,7 @@ public class AuthConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // ВАЖНО!
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**","/.well-known/jwks.json").permitAll()

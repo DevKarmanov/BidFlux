@@ -2,12 +2,18 @@ server:
   port: 8081
 
 grpc:
+  server:
+    port: 5438
+    security:
+      enabled: true
+      certificate-chain: classpath:certs/grpc/server-bid-cert-example.pem
+      private-key: classpath:certs/grpc/server-bid-key-example.pem
   client:
     auction-service:
       address: localhost:5436
       negotiation-type: TLS
       security:
-        trust-cert-collection: classpath:certs/grpc/server-auction-cert-example.pem  # заменить на реальный cert
+        trust-cert-collection: classpath:certs/grpc/server-auction-cert-example.pem
     user-service:
       address: localhost:5435
       negotiation-type: TLS
@@ -19,11 +25,11 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:8083/.well-known/jwks.json # замените на ваш path to pub key
+          jwk-set-uri: http://localhost:8083/.well-known/jwks.json
   datasource:
-    url: jdbc:postgresql://localhost:5432/your_db_name   # заменить на реальную БД
-    username: your_db_user                               # заменить на пользователя
-    password: your_db_password                           # заменить на пароль
+    url: jdbc:postgresql://localhost:5432/db_name
+    username: your_username
+    password: your_password
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
@@ -32,4 +38,9 @@ spring:
     hibernate:
       ddl-auto: none
     open-in-view: false
+  main:
+    banner-mode: off
 
+springdoc:
+  swagger-ui:
+    url: /openapi.yaml
